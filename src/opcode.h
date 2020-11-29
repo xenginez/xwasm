@@ -9,6 +9,26 @@
 #ifndef OPCODE_H__2A455BD5_6317_4F3D_98FE_2FB479802C05
 #define OPCODE_H__2A455BD5_6317_4F3D_98FE_2FB479802C05
 
+#if COMPILER == COMPILER_MSVC
+#   define DLL_IMPORT __declspec( dllimport )
+#   define DLL_EXPORT __declspec( dllexport )
+#elif COMPILER == COMPILER_GNUC || COMPILER == COMPILER_CLANG
+#   define DLL_IMPORT __attribute__ ((visibility ("default")))
+#   define DLL_EXPORT __attribute__ ((visibility ("default")))
+#endif
+
+#ifdef XWASM_EXPORT
+#	define XWASM_API DLL_EXPORT
+#else
+#	define XWASM_API DLL_IMPORT
+#endif // XWASM_EXPORT
+
+#ifdef _WIN32
+#pragma warning( disable: 4251 )
+#else
+
+#endif
+
 namespace xwasm
 {
 	constexpr unsigned int MAGIC_NUMBER = 0x6D736100;

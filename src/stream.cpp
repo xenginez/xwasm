@@ -69,7 +69,7 @@ bool xwasm::stream::eof() const
 	return _cur >= _end;
 }
 
-std::uint32_t xwasm::stream::tellg()
+std::uint64_t xwasm::stream::tellg()
 {
 	if( _type == type::STREAM )
 	{
@@ -79,7 +79,7 @@ std::uint32_t xwasm::stream::tellg()
 	return _cur - _beg;
 }
 
-xwasm::stream & xwasm::stream::read( char * ptr, std::uint32_t size )
+xwasm::stream & xwasm::stream::read( char * ptr, std::uint64_t size )
 {
 	if( _type == type::STREAM )
 	{

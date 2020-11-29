@@ -32,7 +32,7 @@ constexpr std::uint64_t xwasm::to_little_uint64( std::uint64_t val )
 {
 	if( xwasm::is_big_endian() )
 	{
-		return xwasm::to_little_uint32( val ) | xwasm::to_little_uint32( val >> 32 );
+		return xwasm::to_little_uint32( static_cast< std::uint32_t >( val ) ) | xwasm::to_little_uint32( static_cast< std::uint32_t >( val >> 32 ) );
 	}
 
 	return val;

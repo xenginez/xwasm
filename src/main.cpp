@@ -1,21 +1,16 @@
 #include <fstream>
-#include <iostream>
 
-#include "loader.h"
-#include "module.h"
-#include "stream.h"
-#include "sandbox.h"
+#include "xwasm.h"
 
 int main()
 {
-	xwasm::module _module( "test" );
-	xwasm::loader _loader;
+	xwasm::sandbox sandbox;
 
 	std::ifstream source( "D:\\wasm3-master\\test\\wasi\\test.wasm", std::ios::binary );
 
 	xwasm::stream s( source );
 
-	_loader.load( &_module, s );
+	sandbox.load( "test", s );
 
 	return 0;
 }

@@ -11,9 +11,11 @@
 
 #include <iostream>
 
+#include "opcode.h"
+
 namespace xwasm
 {
-	class stream
+	class XWASM_API stream
 	{
 	public:
 		enum class type
@@ -56,17 +58,11 @@ namespace xwasm
 
 		int peek();
 
-		std::uint32_t tellg();
+		std::uint64_t tellg();
 
-		xwasm::stream & read( char * ptr, std::uint32_t size );
+		xwasm::stream & read( char * ptr, std::uint64_t size );
 
 		xwasm::stream & seekg( std::uint64_t offset, seek_dir dir );
-
-	public:
-		template< typename T > xwasm::stream & read( T & val )
-		{
-			return read( &val, sizeof( val ) );
-		}
 
 	private:
 		type _type;

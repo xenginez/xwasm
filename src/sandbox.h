@@ -9,20 +9,17 @@
 #ifndef SANDBOX_H__B8B1DF89_04DB_4ED2_A3A8_F7372950271D
 #define SANDBOX_H__B8B1DF89_04DB_4ED2_A3A8_F7372950271D
 
-#include <map>
 #include <deque>
-#include <string>
+#include <vector>
 
 #include "value.h"
 #include "stream.h"
-#include "mem_view.hpp"
 
 namespace xwasm
 {
 	class module;
-	class executor;
 
-	class sandbox
+	class XWASM_API sandbox
 	{
 		friend class executor;
 
@@ -35,7 +32,13 @@ namespace xwasm
 		~sandbox();
 
 	public:
-		const xwasm::module & load( const std::string & name, xwasm::stream & source );
+		bool insert_module( xwasm::module && val );
+
+		std::vector< const xwasm::module * > modules() const;
+
+		const xwasm::module * find_module( const std::string & name );
+
+		const xwasm::module * load( const std::string & name, xwasm::stream & source );
 
 	public:
 		int call( xwasm::value & result, const std::string & name, std::deque< xwasm::value > & params );
@@ -50,21 +53,29 @@ namespace xwasm
 			return call( result, name, params );
 		}
 
-		template< typename T, typename ... Args > int call( T & result, const std::string & name, Args &&...args )
+		template< typename ... Args > int call( xwasm::value & result, const std::string & name, Args &&...args )
 		{
 			std::deque< xwasm::value > params;
 
 			push_args( params, std::forward< Args >( args )... );
 
-			xwasm::value res;
-			int ret = call( res, name, params );
-			if( ret == 0 && res.type != value_kind::VALUE_UNSPECIFIED )
-			{
-				get_memory( res, &result, sizeof( result ) );
-			}
+			int ret = call( result, name, params );
 
 			return ret;
 		}
+
+	public:
+		xwasm::value set_memory( const xwasm::module * _module, std::uint8_t * ptr, std::uint64_t size );
+
+		void get_memory( const xwasm::module * _module, xwasm::value index, std::uint8_t * ptr, std::uint64_t size );
+
+		xwasm::value get_global( const xwasm::module * _module, const std::string & name );
+
+		void set_global( const xwasm::module * _module, const std::string & name, xwasm::value val );
+
+		xwasm::value get_table( const xwasm::module * _module, const std::string & name );
+
+		void set_table( const xwasm::module * _module, const std::string & name, xwasm::value val );
 
 	private:
 		void push_args( std::deque< xwasm::value > & args );
@@ -102,12 +113,10 @@ namespace xwasm
 
 		void push( std::deque< xwasm::value > & params, double val );
 
-		void push( std::deque< xwasm::value > & params, xwasm::mem_view val );
-
-	private:
-		xwasm::value set_memory( std::uint8_t * ptr, std::uint64_t size );
-
-		void get_memory( xwasm::value index, std::uint8_t * ptr, std::uint64_t size );
+		template< typename T > void push( std::deque< xwasm::value > & params, T val )
+		{
+			push( params, make( val ) );
+		}
 
 	private:
 		private_p * _p;

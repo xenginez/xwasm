@@ -13,9 +13,12 @@
 
 namespace xwasm
 {
-	class func_t;
-
+	struct func_t;
+	
 	class value;
+	class module;
+	class stream;
+	class runtime;
 	class sandbox;
 
 	class executor
@@ -29,14 +32,23 @@ namespace xwasm
 		~executor();
 
 	public:
-		int exec( xwasm::value & result, func_t * func, const std::deque< xwasm::value > & params );
+		int exec( xwasm::value & _result, xwasm::runtime * _runtime, xwasm::func_t * _func, const std::deque< xwasm::value > & _params );
 
-	private:
+	public:
+		xwasm::func_t * cur_func() const;
+
+		xwasm::stream * cur_stream() const;
+
+		xwasm::runtime * cur_runtime() const;
+
+		xwasm::sandbox * cur_sandbox() const;
+
+	public:
 		void push( xwasm::value val );
 
 		xwasm::value pop();
 
-	private:
+	public:
 		void pushed();
 
 		void poped();

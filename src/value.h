@@ -15,7 +15,7 @@
 
 namespace xwasm
 {
-	class value
+	class XWASM_API value
 	{
 	public:
 		value();

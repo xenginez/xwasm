@@ -17,13 +17,13 @@
 
 namespace xwasm
 {
-	struct type_t
+	struct XWASM_API type_t
 	{
 		std::vector<xwasm::value_kind> params;
 		std::vector<xwasm::value_kind> results;
 	};
 
-	struct import_t
+	struct XWASM_API import_t
 	{
 		std::string name;
 		std::string modulename;
@@ -44,48 +44,49 @@ namespace xwasm
 		} desc;
 	};
 
-	struct func_t
+	struct XWASM_API func_t
 	{
+		bool cfunc;
 		std::uint32_t typeidx;
 		std::vector<std::uint8_t> codes;
 		std::vector<xwasm::type_kind> locals;
 	};
 
-	struct table_t
+	struct XWASM_API table_t
 	{
 		std::uint32_t min;
 		std::uint32_t max;
 		xwasm::type_kind type;
 	};
 
-	struct mem_t
+	struct XWASM_API mem_t
 	{
 		std::uint32_t min;
 		std::uint32_t max;
 	};
 
-	struct global_t
+	struct XWASM_API global_t
 	{
 		bool mut;
 		xwasm::value init;
 		xwasm::value_kind type;
 	};
 
-	struct export_t
+	struct XWASM_API export_t
 	{
 		std::string name;
 		std::uint32_t descidx;
 		xwasm::desc_kind desctype;
 	};
 
-	struct elem_t
+	struct XWASM_API elem_t
 	{
 		std::uint32_t table;
 		std::int32_t offset;
 		std::vector<std::uint32_t> inits;
 	};
 
-	struct data_t
+	struct XWASM_API data_t
 	{
 		std::uint32_t data;
 		xwasm::value offset;

@@ -255,6 +255,7 @@ int xwasm::loader::load_function( module * _module, xwasm::stream & _source )
 		{
 			func_t func;
 
+			func.cfunc = false;
 			func.typeidx = get_leb128_uint32( _source );
 
 			_module->_funcs.push_back( func );

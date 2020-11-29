@@ -1,26 +1,26 @@
-#pragma once
+/*!
+ * \file	module.h
+ *
+ * \author	ZhengYuanQing
+ * \date	2020/11/29
+ * \email	zhengyuanqing.95@gmail.com
+ *
+ */
+#ifndef MODULE_H__BDADF173_57AA_474A_BDF7_184C8DF7D02E
+#define MODULE_H__BDADF173_57AA_474A_BDF7_184C8DF7D02E
 
 #include <vector>
 #include <string>
 
+#include "section_t.h"
+
 namespace xwasm
 {
-	class mem_t;
-	class func_t;
-	class type_t;
-	class elem_t;
-	class data_t;
-	class table_t;
-	class global_t;
-	class import_t;
-	class export_t;
-
 	class value;
 	class loader;
 	class sandbox;
-	class executor;
 
-	class module
+	class XWASM_API module
 	{
 		friend class loader;
 		friend class sandbox;
@@ -87,3 +87,5 @@ namespace xwasm
 		std::vector<xwasm::export_t> _exports;
 	};
 }
+
+#endif // MODULE_H__BDADF173_57AA_474A_BDF7_184C8DF7D02E
