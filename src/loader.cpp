@@ -1,7 +1,6 @@
 #include "loader.h"
 
 #include "module.h"
-#include "errmsg.h"
 #include "endian.h"
 #include "section_t.h"
 

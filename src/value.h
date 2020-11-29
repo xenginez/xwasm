@@ -15,6 +15,24 @@
 
 namespace xwasm
 {
+	union value_data
+	{
+		value_data();
+		value_data( std::int32_t val );
+		value_data( std::int64_t val );
+		value_data( std::uint32_t  val );
+		value_data( std::uint64_t val );
+		value_data( float  val );
+		value_data( double val );
+
+		std::int32_t i32;
+		std::int64_t i64;
+		std::uint32_t u32;
+		std::uint64_t u64;
+		float f32;
+		double f64;
+	};
+
 	class XWASM_API value
 	{
 	public:

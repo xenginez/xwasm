@@ -1,12 +1,12 @@
 #include "executor.h"
 
-#include "errmsg.h"
-
-#include "value.h"
 #include "stream.h"
 #include "endian.h"
 #include "runtime.h"
 #include "section_t.h"
+
+static constexpr std::uint64_t F32SIGNMASK = 0x7fffffff;
+static constexpr std::uint64_t F64SIGNMASK = 0x7fffffffffffffff;
 
 inline void exec_unreachable( xwasm::executor * exec )
 {
@@ -66,133 +66,916 @@ inline void exec_i64_store32( xwasm::executor * exec );
 inline void exec_memory_size( xwasm::executor * exec );
 inline void exec_memory_grow( xwasm::executor * exec );
 
-inline void exec_i32_const( xwasm::executor * exec );
-inline void exec_i64_const( xwasm::executor * exec );
-inline void exec_f32_const( xwasm::executor * exec );
-inline void exec_f64_const( xwasm::executor * exec );
-inline void exec_i32_eqz( xwasm::executor * exec );
-inline void exec_i32_eq( xwasm::executor * exec );
-inline void exec_i32_ne( xwasm::executor * exec );
-inline void exec_i32_lt_s( xwasm::executor * exec );
-inline void exec_i32_lt_u( xwasm::executor * exec );
-inline void exec_i32_gt_s( xwasm::executor * exec );
-inline void exec_i32_gt_u( xwasm::executor * exec );
-inline void exec_i32_le_s( xwasm::executor * exec );
-inline void exec_i32_le_u( xwasm::executor * exec );
-inline void exec_i32_ge_s( xwasm::executor * exec );
-inline void exec_i32_ge_u( xwasm::executor * exec );
-inline void exec_i64_eqz( xwasm::executor * exec );
-inline void exec_i64_eq( xwasm::executor * exec );
-inline void exec_i64_ne( xwasm::executor * exec );
-inline void exec_i64_lt_s( xwasm::executor * exec );
-inline void exec_i64_lt_u( xwasm::executor * exec );
-inline void exec_i64_gt_s( xwasm::executor * exec );
-inline void exec_i64_gt_u( xwasm::executor * exec );
-inline void exec_i64_le_s( xwasm::executor * exec );
-inline void exec_i64_le_u( xwasm::executor * exec );
-inline void exec_i64_ge_s( xwasm::executor * exec );
-inline void exec_i64_ge_u( xwasm::executor * exec );
-inline void exec_f32_eq( xwasm::executor * exec );
-inline void exec_f32_ne( xwasm::executor * exec );
-inline void exec_f32_lt( xwasm::executor * exec );
-inline void exec_f32_gt( xwasm::executor * exec );
-inline void exec_f32_le( xwasm::executor * exec );
-inline void exec_f32_ge( xwasm::executor * exec );
-inline void exec_f64_eq( xwasm::executor * exec );
-inline void exec_f64_ne( xwasm::executor * exec );
-inline void exec_f64_lt( xwasm::executor * exec );
-inline void exec_f64_gt( xwasm::executor * exec );
-inline void exec_f64_le( xwasm::executor * exec );
-inline void exec_f64_ge( xwasm::executor * exec );
-inline void exec_i32_clz( xwasm::executor * exec );
-inline void exec_i32_ctz( xwasm::executor * exec );
-inline void exec_i32_popcnt( xwasm::executor * exec );
-inline void exec_i32_add( xwasm::executor * exec );
-inline void exec_i32_sub( xwasm::executor * exec );
-inline void exec_i32_mul( xwasm::executor * exec );
-inline void exec_i32_div_s( xwasm::executor * exec );
-inline void exec_i32_div_u( xwasm::executor * exec );
-inline void exec_i32_rem_s( xwasm::executor * exec );
-inline void exec_i32_rem_u( xwasm::executor * exec );
-inline void exec_i32_and( xwasm::executor * exec );
-inline void exec_i32_or( xwasm::executor * exec );
-inline void exec_i32_xor( xwasm::executor * exec );
-inline void exec_i32_shl( xwasm::executor * exec );
-inline void exec_i32_shr_s( xwasm::executor * exec );
-inline void exec_i32_shr_u( xwasm::executor * exec );
-inline void exec_i32_rotl( xwasm::executor * exec );
-inline void exec_i32_rotr( xwasm::executor * exec );
-inline void exec_i64_clz( xwasm::executor * exec );
-inline void exec_i64_ctz( xwasm::executor * exec );
-inline void exec_i64_popcnt( xwasm::executor * exec );
-inline void exec_i64_add( xwasm::executor * exec );
-inline void exec_i64_sub( xwasm::executor * exec );
-inline void exec_i64_mul( xwasm::executor * exec );
-inline void exec_i64_div_s( xwasm::executor * exec );
-inline void exec_i64_div_u( xwasm::executor * exec );
-inline void exec_i64_rem_s( xwasm::executor * exec );
-inline void exec_i64_rem_u( xwasm::executor * exec );
-inline void exec_i64_and( xwasm::executor * exec );
-inline void exec_i64_or( xwasm::executor * exec );
-inline void exec_i64_xor( xwasm::executor * exec );
-inline void exec_i64_shl( xwasm::executor * exec );
-inline void exec_i64_shr_s( xwasm::executor * exec );
-inline void exec_i64_shr_u( xwasm::executor * exec );
-inline void exec_i64_rotl( xwasm::executor * exec );
-inline void exec_i64_rotr( xwasm::executor * exec );
-inline void exec_f32_abs( xwasm::executor * exec );
-inline void exec_f32_neg( xwasm::executor * exec );
-inline void exec_f32_ceil( xwasm::executor * exec );
-inline void exec_f32_floor( xwasm::executor * exec );
-inline void exec_f32_trunc( xwasm::executor * exec );
-inline void exec_f32_nearest( xwasm::executor * exec );
-inline void exec_f32_sqrt( xwasm::executor * exec );
-inline void exec_f32_add( xwasm::executor * exec );
-inline void exec_f32_sub( xwasm::executor * exec );
-inline void exec_f32_mul( xwasm::executor * exec );
-inline void exec_f32_div( xwasm::executor * exec );
-inline void exec_f32_min( xwasm::executor * exec );
-inline void exec_f32_max( xwasm::executor * exec );
-inline void exec_f32_copysign( xwasm::executor * exec );
-inline void exec_f64_abs( xwasm::executor * exec );
-inline void exec_f64_neg( xwasm::executor * exec );
-inline void exec_f64_ceil( xwasm::executor * exec );
-inline void exec_f64_floor( xwasm::executor * exec );
-inline void exec_f64_trunc( xwasm::executor * exec );
-inline void exec_f64_nearest( xwasm::executor * exec );
-inline void exec_f64_sqrt( xwasm::executor * exec );
-inline void exec_f64_add( xwasm::executor * exec );
-inline void exec_f64_sub( xwasm::executor * exec );
-inline void exec_f64_mul( xwasm::executor * exec );
-inline void exec_f64_div( xwasm::executor * exec );
-inline void exec_f64_min( xwasm::executor * exec );
-inline void exec_f64_max( xwasm::executor * exec );
-inline void exec_f64_copysign( xwasm::executor * exec );
-inline void exec_i32_wrap_i64( xwasm::executor * exec );
-inline void exec_i32_trunc_s_f32( xwasm::executor * exec );
-inline void exec_i32_trunc_u_f32( xwasm::executor * exec );
-inline void exec_i32_trunc_s_f64( xwasm::executor * exec );
-inline void exec_i32_trunc_u_f64( xwasm::executor * exec );
-inline void exec_i64_extend_s_i32( xwasm::executor * exec );
-inline void exec_i64_extend_u_i32( xwasm::executor * exec );
-inline void exec_i64_trunc_s_f32( xwasm::executor * exec );
-inline void exec_i64_trunc_u_f32( xwasm::executor * exec );
-inline void exec_i64_trunc_s_f64( xwasm::executor * exec );
-inline void exec_i64_trunc_u_f64( xwasm::executor * exec );
-inline void exec_f32_convert_s_i32( xwasm::executor * exec );
-inline void exec_f32_convert_u_i32( xwasm::executor * exec );
-inline void exec_f32_convert_s_i64( xwasm::executor * exec );
-inline void exec_f32_convert_u_i64( xwasm::executor * exec );
-inline void exec_f32_demote_f64( xwasm::executor * exec );
-inline void exec_f64_convert_s_i32( xwasm::executor * exec );
-inline void exec_f64_convert_u_i32( xwasm::executor * exec );
-inline void exec_f64_convert_s_i64( xwasm::executor * exec );
-inline void exec_f64_convert_u_i64( xwasm::executor * exec );
-inline void exec_f64_promote_f32( xwasm::executor * exec );
-inline void exec_i32_reinterpret_f32( xwasm::executor * exec );
-inline void exec_i64_reinterpret_f64( xwasm::executor * exec );
-inline void exec_f32_reinterpret_i32( xwasm::executor * exec );
-inline void exec_f64_reinterpret_i64( xwasm::executor * exec );
+inline void exec_i32_const( xwasm::executor * exec )
+{
+	std::int32_t v;
+	exec->cur_stream()->read( ( char * )&v, sizeof( std::int32_t ) );
+	exec->push( v );
+}
+inline void exec_i64_const( xwasm::executor * exec )
+{
+	std::int64_t v;
+	exec->cur_stream()->read( ( char * )&v, sizeof( std::int64_t ) );
+	exec->push( v );
+}
+inline void exec_f32_const( xwasm::executor * exec )
+{
+	float v;
+	exec->cur_stream()->read( ( char * )&v, sizeof( float ) );
+	exec->push( v );
+}
+inline void exec_f64_const( xwasm::executor * exec )
+{
+	double v;
+	exec->cur_stream()->read( ( char * )&v, sizeof( double ) );
+	exec->push( v );
+}
+inline void exec_i32_eqz( xwasm::executor * exec )
+{
+	exec->push( std::uint32_t( exec->pop().i32 == 0 ) );
+}
+inline void exec_i32_eq( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i32 == rhs.i32 ) );
+}
+inline void exec_i32_ne( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i32 != rhs.i32 ) );
+}
+inline void exec_i32_lt_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i32 < rhs.i32 ) );
+}
+inline void exec_i32_lt_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.u32 < rhs.u32 ) );
+}
+inline void exec_i32_gt_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i32 > rhs.i32 ) );
+}
+inline void exec_i32_gt_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.u32 > rhs.u32 ) );
+}
+inline void exec_i32_le_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i32 <= rhs.i32 ) );
+}
+inline void exec_i32_le_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.u32 <= rhs.u32 ) );
+}
+inline void exec_i32_ge_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i32 >= rhs.i32 ) );
+}
+inline void exec_i32_ge_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.u32 >= rhs.u32 ) );
+}
+inline void exec_i64_eqz( xwasm::executor * exec )
+{
+	exec->push( std::uint32_t( exec->pop().i64 == 0 ) );
+}
+inline void exec_i64_eq( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i64 == rhs.i64 ) );
+}
+inline void exec_i64_ne( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i64 != rhs.i64 ) );
+}
+inline void exec_i64_lt_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i64 < rhs.i64 ) );
+}
+inline void exec_i64_lt_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.u64 < rhs.u64 ) );
+}
+inline void exec_i64_gt_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i64 > rhs.i64 ) );
+}
+inline void exec_i64_gt_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.u64 > rhs.u64 ) );
+}
+inline void exec_i64_le_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i64 <= rhs.i64 ) );
+}
+inline void exec_i64_le_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.u64 <= rhs.u64 ) );
+}
+inline void exec_i64_ge_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.i64 >= rhs.i64 ) );
+}
+inline void exec_i64_ge_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.u64 >= rhs.u64 ) );
+}
+inline void exec_f32_eq( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f32 == rhs.f32 ) );
+}
+inline void exec_f32_ne( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f32 != rhs.f32 ) );
+}
+inline void exec_f32_lt( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f32 < rhs.f32 ) );
+}
+inline void exec_f32_gt( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f32 > rhs.f32 ) );
+}
+inline void exec_f32_le( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f32 <= rhs.f32 ) );
+}
+inline void exec_f32_ge( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f32 >= rhs.f32 ) );
+}
+inline void exec_f64_eq( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f64 == rhs.f64 ) );
+}
+inline void exec_f64_ne( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f64 != rhs.f64 ) );
+}
+inline void exec_f64_lt( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f64 < rhs.f64 ) );
+}
+inline void exec_f64_gt( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f64 > rhs.f64 ) );
+}
+inline void exec_f64_le( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f64 <= rhs.f64 ) );
+}
+inline void exec_f64_ge( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( std::uint32_t( lhs.f64 >= rhs.f64 ) );
+}
+inline void exec_i32_clz( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	std::int32_t count = 0;
+	while( ( v.u32 & 0x80000000 ) == 0 )
+	{
+		v.u32 = ( v.u32 << 1 );
+		count++;
+	}
+
+	exec->push( count );
+}
+inline void exec_i32_ctz( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	std::int32_t count = 0;
+	while( ( v.u32 & 1 ) == 0 )
+	{
+		v.u32 = ( v.u32 >> 1 );
+		count++;
+	}
+
+	exec->push( count );
+}
+inline void exec_i32_popcnt( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	std::int32_t count = 0;
+	while( v.u32 )
+	{
+		v.u32 = ( v.u32 & ( v.u32 - 1 ) );
+		count++;
+	}
+
+	exec->push( count );
+}
+inline void exec_i32_add( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 + rhs.i32 );
+}
+inline void exec_i32_sub( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 - rhs.i32 );
+}
+inline void exec_i32_mul( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 * rhs.i32 );
+}
+inline void exec_i32_div_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 / rhs.i32 );
+}
+inline void exec_i32_div_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.u32 / rhs.u32 );
+}
+inline void exec_i32_rem_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 % rhs.i32 );
+}
+inline void exec_i32_rem_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.u32 % rhs.u32 );
+}
+inline void exec_i32_and( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 & rhs.i32 );
+}
+inline void exec_i32_or( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 | rhs.i32 );
+}
+inline void exec_i32_xor( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 ^ rhs.i32 );
+}
+inline void exec_i32_shl( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 << rhs.i32 );
+}
+inline void exec_i32_shr_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i32 >> rhs.i32 );
+}
+inline void exec_i32_shr_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.u32 >> rhs.u32 );
+}
+inline void exec_i32_rotl( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	if( rhs.i32 == 0 )
+		exec->push( lhs.i32 );
+
+	exec->push( ( lhs.i32 << rhs.i32 ) | ( lhs.i32 >> ( sizeof( std::int32_t ) * 8 - rhs.i32 ) ) );
+}
+inline void exec_i32_rotr( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	if( rhs.i32 == 0 )
+		exec->push( lhs.i32 );
+
+	exec->push( ( lhs.i32 >> rhs.i32 ) | ( lhs.i32 << ( sizeof( std::int32_t ) * 8 - rhs.i32 ) ) );
+}
+inline void exec_i64_clz( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	std::int64_t count = 0;
+	while( ( v.u64 & 0x8000000000000000 ) == 0 )
+	{
+		v.u64 = ( v.u64 << 1 );
+		count++;
+	}
+
+	exec->push( count );
+}
+inline void exec_i64_ctz( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	std::int64_t count = 0;
+	while( ( v.u64 & 1 ) == 0 )
+	{
+		v.u64 = ( v.u64 >> 1 );
+		count++;
+	}
+
+	exec->push( count );
+}
+inline void exec_i64_popcnt( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	std::int64_t count = 0;
+	while( v.u64 )
+	{
+		v.u64 = ( v.u64 & ( v.u64 - 1 ) );
+		count++;
+	}
+
+	exec->push( count );
+}
+inline void exec_i64_add( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 + rhs.i64 );
+}
+inline void exec_i64_sub( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 - rhs.i64 );
+}
+inline void exec_i64_mul( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 * rhs.i64 );
+}
+inline void exec_i64_div_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 / rhs.i64 );
+}
+inline void exec_i64_div_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.u64 / rhs.u64 );
+}
+inline void exec_i64_rem_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 % rhs.i64 );
+}
+inline void exec_i64_rem_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.u64 % rhs.u64 );
+}
+inline void exec_i64_and( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 & rhs.i64 );
+}
+inline void exec_i64_or( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 | rhs.i64 );
+}
+inline void exec_i64_xor( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 ^ rhs.i64 );
+}
+inline void exec_i64_shl( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 << rhs.i64 );
+}
+inline void exec_i64_shr_s( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.i64 >> rhs.i64 );
+}
+inline void exec_i64_shr_u( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	exec->push( lhs.u64 >> rhs.u64  );
+}
+inline void exec_i64_rotl( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	if( rhs.i64 == 0 )
+		exec->push( lhs.i64 );
+
+	exec->push( ( lhs.i64 << rhs.i64 ) | ( lhs.i64 >> ( sizeof( std::int64_t ) * 8 - rhs.i64 ) ) );
+}
+inline void exec_i64_rotr( xwasm::executor * exec )
+{
+	auto rhs = exec->pop();
+	auto lhs = exec->pop();
+
+	if( rhs.i64 == 0 )
+		exec->push( lhs.i64 );
+
+	exec->push( ( lhs.i64 >> rhs.i64 ) | ( lhs.i64 << ( sizeof( std::int64_t ) * 8 - rhs.i64 ) ) );
+}
+inline void exec_f32_abs( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f32 ) )
+	{
+		exec->push( std::numeric_limits<float>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( std::fabsf( v.f32 ) );
+	}
+}
+inline void exec_f32_neg( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f32 ) )
+	{
+		exec->push( std::numeric_limits<double>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( float( v.u32 ^ F32SIGNMASK ) );
+	}
+}
+inline void exec_f32_ceil( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f32 ) )
+	{
+		exec->push( std::numeric_limits<float>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( std::ceilf( v.f32 ) );
+	}
+}
+inline void exec_f32_floor( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f32 ) )
+	{
+		exec->push( std::numeric_limits<float>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( std::floorf( v.f32 ) );
+	}
+}
+inline void exec_f32_trunc( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f32 ) )
+	{
+		exec->push( std::numeric_limits<float>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( std::truncf( v.f32 ) );
+	}
+}
+inline void exec_f32_nearest( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f32 ) )
+	{
+		exec->push( std::numeric_limits<float>::quiet_NaN() );
+	}
+	else
+	{
+		auto is_even = []( float i ) noexcept { return std::fmod( i, float{ 2 } ) == float{ 0 }; };
+
+		auto t = std::trunc( v.f32 );
+		auto diff = std::abs( v.f32 - t );
+		if( diff > float{ 0.5 } || ( diff == float{ 0.5 } && !is_even( t ) ) )
+			exec->push( t + std::copysign( float{ 1 }, v.f32 ) );
+		else
+			exec->push( t );
+	}
+}
+inline void exec_f32_sqrt( xwasm::executor * exec )
+{
+	exec->push( std::sqrt( exec->pop().f32 ) );
+}
+inline void exec_f32_add( xwasm::executor * exec )
+{
+	auto v2 = exec->pop();
+	auto v1 = exec->pop();
+	exec->push( v1.f32 + v2.f32 );
+}
+inline void exec_f32_sub( xwasm::executor * exec )
+{
+	auto v2 = exec->pop();
+	auto v1 = exec->pop();
+	exec->push( v1.f32 - v2.f32 );
+}
+inline void exec_f32_mul( xwasm::executor * exec )
+{
+	auto v2 = exec->pop();
+	auto v1 = exec->pop();
+	exec->push( v1.f32 * v2.f32 );
+}
+inline void exec_f32_div( xwasm::executor * exec )
+{
+	auto v2 = exec->pop();
+	auto v1 = exec->pop();
+	exec->push( v1.f32 / v2.f32 );
+}
+inline void exec_f32_min( xwasm::executor * exec )
+{
+	exec->push( std::min( exec->pop().f32, exec->pop().f32 ) );
+}
+inline void exec_f32_max( xwasm::executor * exec )
+{
+	exec->push( std::max( exec->pop().f32, exec->pop().f32 ) );
+}
+inline void exec_f32_copysign( xwasm::executor * exec )
+{
+	xwasm::value_data d;
+	d.u32 = ( exec->pop().u32 & F32SIGNMASK ) | ( exec->pop().u32 & F32SIGNMASK );
+	exec->push( d.f32 );
+}
+inline void exec_f64_abs( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f64 ) )
+	{
+		exec->push( std::numeric_limits<double>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( std::abs( v.f64 ) );
+	}
+}
+inline void exec_f64_neg( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f64 ) )
+	{
+		exec->push( std::numeric_limits<double>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( double( v.u64 ^ F64SIGNMASK ) );
+	}
+}
+inline void exec_f64_ceil( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f64 ) )
+	{
+		exec->push( std::numeric_limits<double>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( std::ceil( v.f64 ) );
+	}
+}
+inline void exec_f64_floor( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f64 ) )
+	{
+		exec->push( std::numeric_limits<double>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( std::floor( v.f64 ) );
+	}
+}
+inline void exec_f64_trunc( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f64 ) )
+	{
+		exec->push( std::numeric_limits<double>::quiet_NaN() );
+	}
+	else
+	{
+		exec->push( std::trunc( v.f64 ) );
+	}
+}
+inline void exec_f64_nearest( xwasm::executor * exec )
+{
+	auto v = exec->pop();
+
+	if( std::isnan( v.f64 ) )
+	{
+		exec->push( std::numeric_limits<double>::quiet_NaN() );
+	}
+	else
+	{
+		auto is_even = []( double i ) noexcept { return std::fmod( i, double{ 2 } ) == double{ 0 }; };
+
+		auto t = std::trunc( v.f64 );
+		auto diff = std::abs( v.f64 - t );
+		if( diff > double{ 0.5 } || ( diff == double{ 0.5 } && !is_even( t ) ) )
+			exec->push( t + std::copysign( double{ 1 }, v.f64 ) );
+		else
+			exec->push( t );
+	}
+}
+inline void exec_f64_sqrt( xwasm::executor * exec )
+{
+	exec->push( std::sqrt( exec->pop().f64 ) );
+}
+inline void exec_f64_add( xwasm::executor * exec )
+{
+	auto v2 = exec->pop();
+	auto v1 = exec->pop();
+	exec->push( v1.f64 + v2.f64 );
+}
+inline void exec_f64_sub( xwasm::executor * exec )
+{
+	auto v2 = exec->pop();
+	auto v1 = exec->pop();
+	exec->push( v1.f64 - v2.f64 );
+}
+inline void exec_f64_mul( xwasm::executor * exec )
+{
+	auto v2 = exec->pop();
+	auto v1 = exec->pop();
+	exec->push( v1.f64 * v2.f64 );
+}
+inline void exec_f64_div( xwasm::executor * exec )
+{
+	auto v2 = exec->pop();
+	auto v1 = exec->pop();
+	exec->push( v1.f64 / v2.f64 );
+}
+inline void exec_f64_min( xwasm::executor * exec )
+{
+	exec->push( std::min( exec->pop().f64, exec->pop().f64 ) );
+}
+inline void exec_f64_max( xwasm::executor * exec )
+{
+	exec->push( std::max( exec->pop().f64, exec->pop().f64 ) );
+}
+inline void exec_f64_copysign( xwasm::executor * exec )
+{
+	xwasm::value_data d;
+	d.u64 = ( exec->pop().u64 & F64SIGNMASK ) | ( exec->pop().u64 & F64SIGNMASK );
+	exec->push( d.f64 );
+}
+inline void exec_i32_wrap_i64( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::int32_t >( exec->pop().i64 ) );
+}
+inline void exec_i32_trunc_s_f32( xwasm::executor * exec )
+{
+	exec->push( static_cast< float >( exec->pop().i32 ) );
+}
+inline void exec_i32_trunc_u_f32( xwasm::executor * exec )
+{
+	exec->push( static_cast< float >( exec->pop().i32 ) );
+}
+inline void exec_i32_trunc_s_f64( xwasm::executor * exec )
+{
+	exec->push( static_cast< double >( exec->pop().i32 ) );
+}
+inline void exec_i32_trunc_u_f64( xwasm::executor * exec )
+{
+	exec->push( static_cast< double >( exec->pop().i32 ) );
+}
+inline void exec_i64_extend_s_i32( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::int32_t >( exec->pop().i64 ) );
+}
+inline void exec_i64_extend_u_i32( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::uint32_t >( exec->pop().i64 ) );
+}
+inline void exec_i64_trunc_s_f32( xwasm::executor * exec )
+{
+	exec->push( static_cast< float >( exec->pop().i64 ) );
+}
+inline void exec_i64_trunc_u_f32( xwasm::executor * exec )
+{
+	exec->push( static_cast< float >( exec->pop().i64 ) );
+}
+inline void exec_i64_trunc_s_f64( xwasm::executor * exec )
+{
+	exec->push( static_cast< double >( exec->pop().i64 ) );
+}
+inline void exec_i64_trunc_u_f64( xwasm::executor * exec )
+{
+	exec->push( static_cast< double >( exec->pop().i64 ) );
+}
+inline void exec_f32_convert_s_i32( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::int32_t >( exec->pop().f32 ) );
+}
+inline void exec_f32_convert_u_i32( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::uint32_t >( exec->pop().f32 ) );
+}
+inline void exec_f32_convert_s_i64( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::int64_t >( exec->pop().f32 ) );
+}
+inline void exec_f32_convert_u_i64( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::uint64_t >( exec->pop().f32 ) );
+}
+inline void exec_f32_demote_f64( xwasm::executor * exec )
+{
+	exec->push( double( exec->pop().f32 ) );
+}
+inline void exec_f64_convert_s_i32( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::int32_t >( exec->pop().f64 ) );
+}
+inline void exec_f64_convert_u_i32( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::uint32_t >( exec->pop().f64 ) );
+}
+inline void exec_f64_convert_s_i64( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::int64_t >( exec->pop().f64 ) );
+}
+inline void exec_f64_convert_u_i64( xwasm::executor * exec )
+{
+	exec->push( static_cast< std::uint64_t >( exec->pop().f64 ) );
+}
+inline void exec_f64_promote_f32( xwasm::executor * exec )
+{
+	exec->push( float( exec->pop().f64 ) );
+}
+inline void exec_i32_reinterpret_f32( xwasm::executor * exec )
+{
+	exec->push( exec->pop().f32 );
+}
+inline void exec_i64_reinterpret_f64( xwasm::executor * exec )
+{
+	exec->push( exec->pop().f64 );
+}
+inline void exec_f32_reinterpret_i32( xwasm::executor * exec )
+{
+	exec->push( exec->pop().i32 );
+}
+inline void exec_f64_reinterpret_i64( xwasm::executor * exec )
+{
+	exec->push( exec->pop().i64 );
+}
 
 namespace xwasm
 {
@@ -214,7 +997,7 @@ struct xwasm::executor::private_p
 	xwasm::stream _stream;
 	xwasm::func_t * _func;
 	xwasm::runtime * _runtime;
-	std::deque< xwasm::value > _operands;
+	std::deque< xwasm::value_data > _operands;
 };
 
 xwasm::executor::executor( xwasm::sandbox * val )
@@ -237,7 +1020,7 @@ int xwasm::executor::exec( xwasm::value & _result, xwasm::runtime * _runtime, xw
 
 	for( const auto & it : _params )
 	{
-		push( it );
+		push( it.u64 );
 	}
 
 	if( _p->_func->cfunc )
@@ -781,7 +1564,8 @@ int xwasm::executor::exec( xwasm::value & _result, xwasm::runtime * _runtime, xw
 
 		if( ! _p->_runtime->_module.type_at( _func->typeidx )->results.empty() )
 		{
-			_result = pop();
+			_result.type = _p->_runtime->_module.type_at( _func->typeidx )->results[0];
+			_result.u64 = pop().u64;
 		}
 	}
 
@@ -810,14 +1594,14 @@ xwasm::sandbox * xwasm::executor::cur_sandbox() const
 	return _p->_sandbox;
 }
 
-void xwasm::executor::push( xwasm::value val )
+void xwasm::executor::push( xwasm::value_data val )
 {
 	_p->_operands.push_back( val );
 }
 
-xwasm::value xwasm::executor::pop()
+xwasm::value_data xwasm::executor::pop()
 {
-	xwasm::value result;
+	xwasm::value_data result;
 
 	if( !_p->_operands.empty() )
 	{

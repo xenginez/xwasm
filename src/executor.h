@@ -11,6 +11,8 @@
 
 #include <deque>
 
+#include "value.h"
+
 namespace xwasm
 {
 	struct func_t;
@@ -44,9 +46,9 @@ namespace xwasm
 		xwasm::sandbox * cur_sandbox() const;
 
 	public:
-		void push( xwasm::value val );
+		void push( xwasm::value_data val );
 
-		xwasm::value pop();
+		xwasm::value_data pop();
 
 	public:
 		void pushed();

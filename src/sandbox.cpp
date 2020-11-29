@@ -9,8 +9,6 @@
 #include "executor.h"
 #include "section_t.h"
 
-#include "errmsg.h"
-
 struct xwasm::sandbox::private_p
 {
 	std::vector< xwasm::runtime > _runtimes;
