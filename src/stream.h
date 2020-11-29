@@ -41,14 +41,14 @@ namespace xwasm
 
 		stream( std::istream & val );
 
-		stream( std::uint8_t * beg, std::uint8_t * end );
+		stream( const std::uint8_t * beg, const std::uint8_t * end );
 
 	public:
 		void clear();
 
 		void reset( std::istream & val );
 
-		void reset( std::uint8_t * beg, std::uint8_t * end );
+		void reset( const std::uint8_t * beg, const std::uint8_t * end );
 
 	public:
 		bool eof() const;
@@ -71,9 +71,9 @@ namespace xwasm
 			std::istream * _stream;
 			struct  
 			{
-				std::uint8_t * _beg;
-				std::uint8_t * _cur;
-				std::uint8_t * _end;
+				const std::uint8_t * _beg;
+				const std::uint8_t * _cur;
+				const std::uint8_t * _end;
 			};
 		};
 	};

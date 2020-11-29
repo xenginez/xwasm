@@ -34,19 +34,21 @@ namespace xwasm
 		~executor();
 
 	public:
-		int exec( xwasm::value & _result, xwasm::runtime * _runtime, xwasm::func_t * _func, const std::deque< xwasm::value > & _params );
+		int exec( xwasm::value & _result, xwasm::runtime * _runtime, const xwasm::func_t * _func, const std::deque< xwasm::value > & _params );
 
 	public:
-		xwasm::func_t * cur_func() const;
-
 		xwasm::stream * cur_stream() const;
 
 		xwasm::runtime * cur_runtime() const;
 
 		xwasm::sandbox * cur_sandbox() const;
 
+		const xwasm::func_t * cur_func() const;
+
 	public:
 		void push( xwasm::value_data val );
+
+		xwasm::value_data top();
 
 		xwasm::value_data pop();
 

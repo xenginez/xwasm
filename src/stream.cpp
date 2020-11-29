@@ -12,11 +12,12 @@ xwasm::stream::stream( std::istream & val )
 
 }
 
-xwasm::stream::stream( std::uint8_t * beg, std::uint8_t * end )
+xwasm::stream::stream( const  std::uint8_t * beg, const  std::uint8_t * end )
 	: _type( type::MEMORY ), _beg( beg ), _cur( beg ), _end( end )
 {
 
 }
+
 void xwasm::stream::clear()
 {
 	_type = type::MEMORY;
@@ -31,7 +32,7 @@ void xwasm::stream::reset( std::istream & val )
 	_stream = &val;
 }
 
-void xwasm::stream::reset( std::uint8_t * beg, std::uint8_t * end )
+void xwasm::stream::reset( const std::uint8_t * beg, const std::uint8_t * end )
 {
 	_type = type::MEMORY;
 	_beg = beg;

@@ -8,6 +8,16 @@
 static constexpr std::uint64_t F32SIGNMASK = 0x7fffffff;
 static constexpr std::uint64_t F64SIGNMASK = 0x7fffffffffffffff;
 
+template< typename T > void store( std::uint8_t * data, T val )
+{
+	std::memcpy( data, &val, sizeof( T ) );
+}
+
+template< typename T > void load( std::uint8_t * data, T & val )
+{
+	std::memcpy( &val, data, sizeof( T ) );
+}
+
 inline void exec_unreachable( xwasm::executor * exec )
 {
 	( void )( exec );
@@ -17,54 +27,383 @@ inline void exec_nop( xwasm::executor * exec )
 	( void )( exec );
 }
 
-inline void exec_block( xwasm::executor * exec );
-inline void exec_loop( xwasm::executor * exec );
-inline void exec_if( xwasm::executor * exec );
-inline void exec_else( xwasm::executor * exec );
+inline void exec_block( xwasm::executor * exec )
+{
 
-inline void exec_end( xwasm::executor * exec );
+}
+inline void exec_loop( xwasm::executor * exec )
+{
 
-inline void exec_br( xwasm::executor * exec );
-inline void exec_br_if( xwasm::executor * exec );
-inline void exec_br_table( xwasm::executor * exec );
-inline void exec_return( xwasm::executor * exec );
-inline void exec_call( xwasm::executor * exec );
-inline void exec_call_indirect( xwasm::executor * exec );
+}
+inline void exec_if( xwasm::executor * exec )
+{
+	// TODO: 
+}
+inline void exec_else( xwasm::executor * exec )
+{
+	// TODO: 
+}
 
-inline void exec_drop( xwasm::executor * exec );
-inline void exec_select( xwasm::executor * exec );
+inline void exec_end( xwasm::executor * exec )
+{
+	// TODO: 
+}
 
-inline void exec_get_local( xwasm::executor * exec );
-inline void exec_set_local( xwasm::executor * exec );
-inline void exec_tee_local( xwasm::executor * exec );
-inline void exec_get_global( xwasm::executor * exec );
-inline void exec_set_global( xwasm::executor * exec );
+inline void exec_br( xwasm::executor * exec )
+{
+	// TODO: 
+}
+inline void exec_br_if( xwasm::executor * exec )
+{
+	// TODO: 
+}
+inline void exec_br_table( xwasm::executor * exec )
+{
+	// TODO: 
+}
+inline void exec_return( xwasm::executor * exec )
+{
+	// TODO: 
+}
+inline void exec_call( xwasm::executor * exec )
+{
+	std::uint32_t func_idx;
+	exec->cur_stream()->read( ( char * )&func_idx, sizeof( std::uint32_t ) );
 
-inline void exec_i32_load( xwasm::executor * exec );
-inline void exec_i64_load( xwasm::executor * exec );
-inline void exec_f32_load( xwasm::executor * exec );
-inline void exec_f64_load( xwasm::executor * exec );
-inline void exec_i32_load8_s( xwasm::executor * exec );
-inline void exec_i32_load8_u( xwasm::executor * exec );
-inline void exec_i32_load16_s( xwasm::executor * exec );
-inline void exec_i32_load16_u( xwasm::executor * exec );
-inline void exec_i64_load8_s( xwasm::executor * exec );
-inline void exec_i64_load8_u( xwasm::executor * exec );
-inline void exec_i64_load16_s( xwasm::executor * exec );
-inline void exec_i64_load16_u( xwasm::executor * exec );
-inline void exec_i64_load32_s( xwasm::executor * exec );
-inline void exec_i64_load32_u( xwasm::executor * exec );
-inline void exec_i32_store( xwasm::executor * exec );
-inline void exec_i64_store( xwasm::executor * exec );
-inline void exec_f32_store( xwasm::executor * exec );
-inline void exec_f64_store( xwasm::executor * exec );
-inline void exec_i32_store8( xwasm::executor * exec );
-inline void exec_i32_store16( xwasm::executor * exec );
-inline void exec_i64_store8( xwasm::executor * exec );
-inline void exec_i64_store16( xwasm::executor * exec );
-inline void exec_i64_store32( xwasm::executor * exec );
-inline void exec_memory_size( xwasm::executor * exec );
-inline void exec_memory_grow( xwasm::executor * exec );
+	auto func = exec->cur_runtime()->_module.func_at( func_idx );
+	auto type = exec->cur_runtime()->_module.type_at( func->typeidx );
+
+	xwasm::value result;
+	std::deque<xwasm::value> args;
+
+	for( size_t i = 0; i < type->params.size(); i++ )
+	{
+		xwasm::value val;
+		val.type = type->params[i];
+		val.u64 = exec->pop().u64;
+		args.push_front( val );
+	}
+
+	exec->exec( result, exec->cur_runtime(), func, args );
+
+	if( !type->results.empty() )
+	{
+		exec->push( result.u64 );
+	}
+}
+inline void exec_call_indirect( xwasm::executor * exec )
+{
+	std::uint32_t type_idx, elem_idx;
+	exec->cur_stream()->read( ( char * )&type_idx, sizeof( std::uint32_t ) );
+	exec->cur_stream()->read( ( char * )&elem_idx, sizeof( std::uint32_t ) );
+
+	// TODO: 
+}
+
+inline void exec_drop( xwasm::executor * exec )
+{
+	exec->pop();
+}
+inline void exec_select( xwasm::executor * exec )
+{
+	std::uint32_t cond = exec->pop().u32;
+
+	auto v2 = exec->pop();
+	auto v1 = exec->pop();
+
+	cond != 0 ? exec->push( v1 ) : exec->push( v2 );
+}
+
+inline void exec_get_local( xwasm::executor * exec )
+{
+	std::uint32_t idx = 0;
+	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
+	exec->push( exec->cur_runtime()->_locals[idx] );
+}
+inline void exec_set_local( xwasm::executor * exec )
+{
+	std::uint32_t idx = 0;
+	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
+	exec->cur_runtime()->_locals[idx] = exec->pop();
+}
+inline void exec_tee_local( xwasm::executor * exec )
+{
+	std::uint32_t idx = 0;
+	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
+	exec->cur_runtime()->_locals[idx] = exec->top();
+}
+inline void exec_get_global( xwasm::executor * exec )
+{
+	std::uint32_t idx = 0;
+	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
+	exec->push( exec->cur_runtime()->_globals[idx] );
+}
+inline void exec_set_global( xwasm::executor * exec )
+{
+	std::uint32_t idx = 0;
+	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
+	exec->cur_runtime()->_globals[idx] = exec->pop();
+}
+
+inline void exec_i32_load( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::int32_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( value );
+}
+inline void exec_i64_load( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::int64_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( value );
+}
+inline void exec_f32_load( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	float value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( value );
+}
+inline void exec_f64_load( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	double value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( value );
+}
+inline void exec_i32_load8_s( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::int8_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int32_t >( value ) );
+}
+inline void exec_i32_load8_u( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::uint8_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int32_t >( value ) );
+}
+inline void exec_i32_load16_s( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::int16_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int32_t >( value ) );
+}
+inline void exec_i32_load16_u( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::uint16_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int32_t >( value ) );
+}
+inline void exec_i64_load8_s( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::int8_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int64_t >( value ) );
+}
+inline void exec_i64_load8_u( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::uint8_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int64_t >( value ) );
+}
+inline void exec_i64_load16_s( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::int16_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int64_t >( value ) );
+}
+inline void exec_i64_load16_u( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::uint16_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int64_t >( value ) );
+}
+inline void exec_i64_load32_s( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::int32_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int64_t >( value ) );
+}
+inline void exec_i64_load32_u( xwasm::executor * exec )
+{
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	std::uint32_t value;
+	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
+
+	exec->push( static_cast< std::int64_t >( value ) );
+}
+inline void exec_i32_store( xwasm::executor * exec )
+{
+	std::int32_t value = exec->pop().i32;
+
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
+}
+inline void exec_i64_store( xwasm::executor * exec )
+{
+	std::int64_t value = exec->pop().i64;
+
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
+}
+inline void exec_f32_store( xwasm::executor * exec )
+{
+	float value = exec->pop().f32;
+
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
+}
+inline void exec_f64_store( xwasm::executor * exec )
+{
+	double value = exec->pop().f64;
+
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
+}
+inline void exec_i32_store8( xwasm::executor * exec )
+{
+	std::int8_t value = static_cast< std::int8_t >( exec->pop().i32 );
+
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
+}
+inline void exec_i32_store16( xwasm::executor * exec )
+{
+	std::int16_t value = static_cast< std::int16_t >( exec->pop().i32 );
+
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
+}
+inline void exec_i64_store8( xwasm::executor * exec )
+{
+	std::int8_t value = static_cast< std::int8_t >( exec->pop().i64 );
+
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
+}
+inline void exec_i64_store16( xwasm::executor * exec )
+{
+	std::int16_t value = static_cast< std::int16_t >( exec->pop().i64 );
+
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
+}
+inline void exec_i64_store32( xwasm::executor * exec )
+{
+	std::int32_t value = static_cast< std::int32_t >( exec->pop().i64 );
+
+	std::uint32_t address = exec->pop().u32;
+	std::uint32_t offset = 0;
+	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+
+	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
+}
+inline void exec_memory_size( xwasm::executor * exec )
+{
+	exec->push( std::uint32_t( exec->cur_runtime()->_memorys.size() / xwasm::MEMORY_PAGE_SIZE ) );
+}
+inline void exec_memory_grow( xwasm::executor * exec )
+{
+	std::uint32_t page_size;
+	exec->cur_stream()->read( ( char * )&page_size, sizeof( std::uint32_t ) );
+
+	std::uint32_t cur_page = static_cast< std::uint32_t >( exec->cur_runtime()->_memorys.size() / xwasm::MEMORY_PAGE_SIZE );
+	
+	exec->cur_runtime()->_memorys.resize( ( page_size + cur_page ) * xwasm::MEMORY_PAGE_SIZE );
+
+	exec->push( cur_page );
+}
 
 inline void exec_i32_const( xwasm::executor * exec )
 {
@@ -981,9 +1320,10 @@ namespace xwasm
 {
 	struct frame
 	{
-		xwasm::func_t * func;
 		xwasm::runtime * runtime;
 		std::uint64_t inst_index;
+		std::uint64_t local_index;
+		const xwasm::func_t * func;
 		std::uint64_t operand_index;
 	};
 }
@@ -995,8 +1335,8 @@ struct xwasm::executor::private_p
 	std::deque< xwasm::frame > _frames;
 
 	xwasm::stream _stream;
-	xwasm::func_t * _func;
 	xwasm::runtime * _runtime;
+	const xwasm::func_t * _func;
 	std::deque< xwasm::value_data > _operands;
 };
 
@@ -1011,7 +1351,7 @@ xwasm::executor::~executor()
 	delete _p;
 }
 
-int xwasm::executor::exec( xwasm::value & _result, xwasm::runtime * _runtime, xwasm::func_t * _func, const std::deque< xwasm::value > & _params )
+int xwasm::executor::exec( xwasm::value & _result, xwasm::runtime * _runtime, const xwasm::func_t * _func, const std::deque< xwasm::value > & _params )
 {
 	pushed();
 
@@ -1574,11 +1914,6 @@ int xwasm::executor::exec( xwasm::value & _result, xwasm::runtime * _runtime, xw
 	return 0;
 }
 
-xwasm::func_t * xwasm::executor::cur_func() const
-{
-	return _p->_func;
-}
-
 xwasm::stream * xwasm::executor::cur_stream() const
 {
 	return &_p->_stream;
@@ -1594,9 +1929,26 @@ xwasm::sandbox * xwasm::executor::cur_sandbox() const
 	return _p->_sandbox;
 }
 
+const xwasm::func_t * xwasm::executor::cur_func() const
+{
+	return _p->_func;
+}
+
 void xwasm::executor::push( xwasm::value_data val )
 {
 	_p->_operands.push_back( val );
+}
+
+xwasm::value_data xwasm::executor::top()
+{
+	xwasm::value_data result;
+
+	if( !_p->_operands.empty() )
+	{
+		result = _p->_operands.back();
+	}
+
+	return result;
 }
 
 xwasm::value_data xwasm::executor::pop()
@@ -1620,6 +1972,7 @@ void xwasm::executor::pushed()
 	frame.runtime = _p->_runtime;
 	frame.inst_index = _p->_stream.tellg();
 	frame.operand_index = _p->_operands.size();
+	frame.local_index = _p->_runtime->_locals.size();
 
 	_p->_frames.emplace_back( frame );
 }
@@ -1633,6 +1986,7 @@ void xwasm::executor::poped()
 	_p->_stream.reset( _p->_func->codes.data(), _p->_func->codes.data() + _p->_func->codes.size() );
 	_p->_stream.seekg( frame.inst_index, xwasm::stream::beg );
 	_p->_operands.erase( _p->_operands.begin() + frame.operand_index, _p->_operands.end() );
+	_p->_runtime->_locals.erase( _p->_runtime->_locals.begin() + frame.local_index, _p->_runtime->_locals.end() );
 
 	_p->_frames.pop_back();
 }
