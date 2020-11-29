@@ -17,14 +17,16 @@ namespace xwasm
 
 	class value;
 	class loader;
+	class sandbox;
 	class executor;
 
 	class module
 	{
 		friend class loader;
+		friend class sandbox;
 
 	public:
-		module( const std::string & val );
+		module();
 
 		~module();
 
@@ -33,6 +35,26 @@ namespace xwasm
 
 		const std::string & name() const;
 
+	public:
+		std::uint64_t mem_size() const;
+
+		std::uint64_t type_size() const;
+
+		std::uint64_t elem_size() const;
+
+		std::uint64_t func_size() const;
+
+		std::uint64_t data_size() const;
+
+		std::uint64_t  tabel_size() const;
+
+		std::uint64_t global_size() const;
+
+		std::uint64_t import_size() const;
+
+		std::uint64_t export_size() const;
+
+	public:
 		const xwasm::mem_t * mem_at( std::uint32_t val ) const;
 
 		const xwasm::type_t * type_at( std::uint32_t val ) const;

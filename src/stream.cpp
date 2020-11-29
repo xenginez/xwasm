@@ -1,5 +1,11 @@
 #include "stream.h"
 
+xwasm::stream::stream()
+	: _type( type::MEMORY ), _beg( nullptr ), _cur( nullptr ), _end( nullptr )
+{
+
+}
+
 xwasm::stream::stream( std::istream & val )
 	:_type( type::STREAM ), _stream( &val )
 {
@@ -10,6 +16,27 @@ xwasm::stream::stream( std::uint8_t * beg, std::uint8_t * end )
 	: _type( type::MEMORY ), _beg( beg ), _cur( beg ), _end( end )
 {
 
+}
+void xwasm::stream::clear()
+{
+	_type = type::MEMORY;
+	_beg = nullptr;
+	_cur = nullptr;
+	_end = nullptr;
+}
+
+void xwasm::stream::reset( std::istream & val )
+{
+	_type = type::STREAM;
+	_stream = &val;
+}
+
+void xwasm::stream::reset( std::uint8_t * beg, std::uint8_t * end )
+{
+	_type = type::MEMORY;
+	_beg = beg;
+	_cur = beg;
+	_end = end;
 }
 
 int xwasm::stream::get()

@@ -44,7 +44,7 @@ namespace xwasm
 		value & operator=( const xwasm::value & val );
 
 	public:
-		xwasm::value_kind _type;
+		xwasm::value_kind type;
 		union
 		{
 			std::int32_t i32;

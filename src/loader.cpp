@@ -161,7 +161,7 @@ int xwasm::loader::load_import( module * _module, xwasm::stream & _source )
 			std::uint32_t modulelen = get_leb128_uint32( _source );
 			_source.read( buf, modulelen );
 			buf[modulelen] = '\0';
-			imp.module = buf;
+			imp.modulename = buf;
 
 			std::uint32_t namelen = get_leb128_uint32( _source );
 			_source.read( buf, namelen );
@@ -355,7 +355,7 @@ int xwasm::loader::load_global( module * _module, xwasm::stream & _source )
 			{
 				std::uint32_t val;
 				_source.read( ( char * )&val, sizeof( float ) );
-				global.init._type = value_kind::VALUE_F32;
+				global.init.type = value_kind::VALUE_F32;
 				global.init.u32 = to_little_uint32( val );
 				break;
 			}
@@ -363,7 +363,7 @@ int xwasm::loader::load_global( module * _module, xwasm::stream & _source )
 			{
 				std::uint64_t val;
 				_source.read( ( char * )&val, sizeof( double ) );
-				global.init._type = value_kind::VALUE_F64;
+				global.init.type = value_kind::VALUE_F64;
 				global.init.u64 = to_little_uint64( val );
 				break;
 			}

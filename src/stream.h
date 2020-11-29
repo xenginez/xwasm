@@ -35,22 +35,38 @@ namespace xwasm
 		static constexpr seek_dir end = seek_dir::DIR_END;
 		
 	public:
+		stream();
+
 		stream( std::istream & val );
 
 		stream( std::uint8_t * beg, std::uint8_t * end );
+
+	public:
+		void clear();
+
+		void reset( std::istream & val );
+
+		void reset( std::uint8_t * beg, std::uint8_t * end );
+
+	public:
+		bool eof() const;
 
 	public:
 		int get();
 
 		int peek();
 
-		bool eof() const;
-
 		std::uint32_t tellg();
 
 		xwasm::stream & read( char * ptr, std::uint32_t size );
 
 		xwasm::stream & seekg( std::uint64_t offset, seek_dir dir );
+
+	public:
+		template< typename T > xwasm::stream & read( T & val )
+		{
+			return read( &val, sizeof( val ) );
+		}
 
 	private:
 		type _type;

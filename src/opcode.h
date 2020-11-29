@@ -57,7 +57,7 @@ namespace xwasm
 		DESC_GLOBAL = 0x03,
 	};
 
-	enum opcode
+	enum opcode : std::uint8_t
 	{
 		// memidx			u32
 		// typeidx			u32

@@ -9,23 +9,40 @@
 #ifndef EXECUTOR_H__826B6F3F_633B_40A8_805E_1AF411656A89
 #define EXECUTOR_H__826B6F3F_633B_40A8_805E_1AF411656A89
 
+#include <deque>
+
 namespace xwasm
 {
+	class func_t;
+
+	class value;
+	class sandbox;
+
 	class executor
 	{
 	public:
-		executor();
+		struct private_p;
+
+	public:
+		executor( xwasm::sandbox * val );
 
 		~executor();
 
 	public:
-		int call();
+		int exec( xwasm::value & result, func_t * func, const std::deque< xwasm::value > & params );
 
-		int stop();
+	private:
+		void push( xwasm::value val );
 
-		int pause();
+		xwasm::value pop();
 
-		int resume();
+	private:
+		void pushed();
+
+		void poped();
+
+	private:
+		private_p * _p;
 	};
 }
 

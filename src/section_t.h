@@ -26,7 +26,7 @@ namespace xwasm
 	struct import_t
 	{
 		std::string name;
-		std::string module;
+		std::string modulename;
 		xwasm::desc_kind desc_type;
 		union
 		{
@@ -91,6 +91,6 @@ namespace xwasm
 		xwasm::value offset;
 		std::vector<std::uint8_t> inits;
 	};
-
 }
+
 #endif // SECTION_T_H__DB2AAF38_0DB1_4FC3_BFE8_96BE7718FA8D
