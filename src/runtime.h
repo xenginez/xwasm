@@ -27,7 +27,7 @@ namespace xwasm
 	public:
 		xwasm::module _module;
 		std::vector< std::uint8_t > _memorys;
-		std::vector< std::uint64_t > _tables;
+		std::vector< std::uint32_t > _tables;
 		std::vector< xwasm::value_data > _locals;
 		std::vector< xwasm::value_data > _globals;
 	};

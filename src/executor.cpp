@@ -18,6 +18,11 @@ template< typename T > void load( std::uint8_t * data, T & val )
 	std::memcpy( &val, data, sizeof( T ) );
 }
 
+void branch( xwasm::executor * exec, std::uint32_t arity )
+{
+
+}
+
 inline void exec_unreachable( xwasm::executor * exec )
 {
 	( void )( exec );
@@ -29,41 +34,75 @@ inline void exec_nop( xwasm::executor * exec )
 
 inline void exec_block( xwasm::executor * exec )
 {
-
+	( void )( exec );
 }
 inline void exec_loop( xwasm::executor * exec )
 {
-
+	( void )( exec );
 }
 inline void exec_if( xwasm::executor * exec )
 {
-	// TODO: 
+	if( exec->pop().u32 != 0 )
+	{
+		exec->cur_stream()->seekg( sizeof( std::uint32_t ), xwasm::stream::cur );
+	}
+	else
+	{
+		std::uint32_t target_pc;
+		exec->cur_stream()->read( ( char * )&target_pc, sizeof( std::uint32_t ) );
+		exec->cur_stream()->seekg( target_pc, xwasm::stream::cur );
+	}
 }
 inline void exec_else( xwasm::executor * exec )
 {
-	// TODO: 
+	std::uint32_t target_pc;
+	exec->cur_stream()->read( ( char * )&target_pc, sizeof( std::uint32_t ) );
+	exec->cur_stream()->seekg( target_pc, xwasm::stream::cur );
 }
 
 inline void exec_end( xwasm::executor * exec )
 {
-	// TODO: 
+	( void )( exec );
 }
 
 inline void exec_br( xwasm::executor * exec )
 {
-	// TODO: 
+	std::uint32_t arity;
+	exec->cur_stream()->read( ( char * )&arity, sizeof( std::uint32_t ) );
+	branch( exec, arity );
 }
 inline void exec_br_if( xwasm::executor * exec )
 {
-	// TODO: 
+	std::uint32_t arity;
+	exec->cur_stream()->read( ( char * )&arity, sizeof( std::uint32_t ) );
+
+	if( exec->pop().u32 == 0 )
+	{
+		exec->cur_stream()->seekg( 2 * sizeof( std::uint32_t ), xwasm::stream::cur );
+	}
+	else
+	{
+		branch( exec, arity );
+	}
 }
 inline void exec_br_table( xwasm::executor * exec )
 {
-	// TODO: 
+	std::uint32_t br_table_size;
+	exec->cur_stream()->read( ( char * )&br_table_size, sizeof( std::uint32_t ) );
+	std::uint32_t arity;
+	exec->cur_stream()->read( ( char * )&arity, sizeof( std::uint32_t ) );
+	std::uint32_t br_table_idx = exec->pop().u32;
+
+	std::uint32_t label_idx_offet = br_table_idx < br_table_size ? br_table_idx * ( 2 * sizeof( std::uint32_t ) ) : br_table_size * ( 2 * sizeof( std::uint32_t ) );
+	exec->cur_stream()->seekg( label_idx_offet, xwasm::stream::cur );
+
+	branch( exec, arity );
 }
 inline void exec_return( xwasm::executor * exec )
 {
-	// TODO: 
+	std::uint32_t arity;
+	exec->cur_stream()->read( ( char * )&arity, sizeof( std::uint32_t ) );
+	branch( exec, arity );
 }
 inline void exec_call( xwasm::executor * exec )
 {
@@ -96,8 +135,28 @@ inline void exec_call_indirect( xwasm::executor * exec )
 	std::uint32_t type_idx, elem_idx;
 	exec->cur_stream()->read( ( char * )&type_idx, sizeof( std::uint32_t ) );
 	exec->cur_stream()->read( ( char * )&elem_idx, sizeof( std::uint32_t ) );
+	std::uint32_t func_idx = exec->cur_runtime()->_tables[elem_idx];
 
-	// TODO: 
+	const xwasm::type_t * type = exec->cur_runtime()->_module.type_at( type_idx );
+	const xwasm::func_t * func = exec->cur_runtime()->_module.func_at( func_idx );
+
+	xwasm::value result;
+	std::deque<xwasm::value> args;
+
+	for( size_t i = 0; i < type->params.size(); i++ )
+	{
+		xwasm::value val;
+		val.type = type->params[i];
+		val.u64 = exec->pop().u64;
+		args.push_front( val );
+	}
+
+	exec->exec( result, exec->cur_runtime(), func, args );
+
+	if( !type->results.empty() )
+	{
+		exec->push( result.u64 );
+	}
 }
 
 inline void exec_drop( xwasm::executor * exec )
