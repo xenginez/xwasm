@@ -15,6 +15,11 @@ int skip_section( xwasm::section_kind section, xwasm::stream & _source )
 
 	while( _source.peek() < section && _source.peek() != 0x00 )
 	{
+		if( _source.eof() )
+		{
+			return -1;
+		}
+
 		_source.get();
 
 		std::uint32_t size = xwasm::get_leb128_uint32( _source );
@@ -356,7 +361,7 @@ int xwasm::loader::load_global( module * _module, xwasm::stream & _source )
 				std::uint32_t val;
 				_source.read( ( char * )&val, sizeof( float ) );
 				global.init.type = value_kind::VALUE_F32;
-				global.init.u32 = to_little_uint32( val );
+				global.init.data = to_little_uint32( val );
 				break;
 			}
 			case opcode::F64_CONST:
@@ -364,7 +369,7 @@ int xwasm::loader::load_global( module * _module, xwasm::stream & _source )
 				std::uint64_t val;
 				_source.read( ( char * )&val, sizeof( double ) );
 				global.init.type = value_kind::VALUE_F64;
-				global.init.u64 = to_little_uint64( val );
+				global.init.data = to_little_uint64( val );
 				break;
 			}
 			default:
@@ -462,10 +467,9 @@ int xwasm::loader::load_code( module * _module, xwasm::stream & _source )
 			}
 
 			streampos += body_size;
-			while( _source.tellg() < streampos )
-			{
-				func.codes.push_back( _source.get() );
-			}
+			std::uint64_t size = streampos - _source.tellg();
+			func.codes.resize( size );
+			_source.read( ( char * )func.codes.data(), func.codes.size() );
 		}
 	}
 

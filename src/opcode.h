@@ -20,7 +20,7 @@
 #ifdef XWASM_EXPORT
 #	define XWASM_API DLL_EXPORT
 #else
-#	define XWASM_API DLL_IMPORT
+#	define XWASM_API
 #endif // XWASM_EXPORT
 
 #ifdef _WIN32
@@ -291,6 +291,26 @@ namespace xwasm
 		F32_REINTERPRET_I32 = 0xBE, // ()
 		F64_REINTERPRET_I64 = 0xBF, // ()
 	};
+
+	union value_data
+	{
+		value_data();
+		value_data( std::int32_t val );
+		value_data( std::int64_t val );
+		value_data( std::uint32_t  val );
+		value_data( std::uint64_t val );
+		value_data( float  val );
+		value_data( double val );
+		value_data( const value_data & val );
+
+		std::int32_t i32;
+		std::int64_t i64;
+		std::uint32_t u32;
+		std::uint64_t u64;
+		float f32;
+		double f64;
+	};
+
 }
 
 #endif // OPCODE_H__2A455BD5_6317_4F3D_98FE_2FB479802C05

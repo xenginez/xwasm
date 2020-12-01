@@ -42,39 +42,45 @@ xwasm::value_data::value_data( double val )
 
 }
 
+xwasm::value_data::value_data( const xwasm::value_data & val )
+	: u64( val.u64 )
+{
+
+}
+
 
 xwasm::value::value()
-	:type( xwasm::value_kind::VALUE_UNSPECIFIED ), i32( 0 )
+	:type( xwasm::value_kind::VALUE_UNSPECIFIED ), data( std::uint64_t( 0 ) )
 {
 
 }
 
 xwasm::value::value( std::int32_t val )
-	: type( xwasm::value_kind::VALUE_I32 ), i32( val )
+	: type( xwasm::value_kind::VALUE_I32 ), data( val )
 {
 
 }
 
 xwasm::value::value( std::int64_t val )
-	: type( xwasm::value_kind::VALUE_I64 ), i64( val )
+	: type( xwasm::value_kind::VALUE_I64 ), data( val )
 {
 
 }
 
 xwasm::value::value( float val )
-	: type( xwasm::value_kind::VALUE_F32 ), f32( val )
+	: type( xwasm::value_kind::VALUE_F32 ), data( val )
 {
 
 }
 
 xwasm::value::value( double val )
-	:type( xwasm::value_kind::VALUE_F32 ), f64( val )
+	:type( xwasm::value_kind::VALUE_F32 ), data( val )
 {
 
 }
 
 xwasm::value::value( const xwasm::value & val )
-	: type( val.type ), i64( val.i64 )
+	: type( val.type ), data( val.data )
 {
 
 }
@@ -86,7 +92,7 @@ xwasm::value::~value()
 xwasm::value & xwasm::value::operator=( std::int32_t val )
 {
 	type = xwasm::value_kind::VALUE_I32;
-	i32 = val;
+	data.i32 = val;
 
 	return *this;
 }
@@ -94,7 +100,7 @@ xwasm::value & xwasm::value::operator=( std::int32_t val )
 xwasm::value & xwasm::value::operator=( std::int64_t val )
 {
 	type = xwasm::value_kind::VALUE_I64;
-	i64 = val;
+	data.i64 = val;
 
 	return *this;
 }
@@ -102,7 +108,7 @@ xwasm::value & xwasm::value::operator=( std::int64_t val )
 xwasm::value & xwasm::value::operator=( float val )
 {
 	type = xwasm::value_kind::VALUE_F32;
-	f32 = val;
+	data.f32 = val;
 
 	return *this;
 }
@@ -110,14 +116,14 @@ xwasm::value & xwasm::value::operator=( float val )
 xwasm::value & xwasm::value::operator=( double val )
 {
 	type = xwasm::value_kind::VALUE_F64;
-	f64 = val;
+	data.f64 = val;
 
 	return *this;
 }
 xwasm::value & xwasm::value::operator=( const xwasm::value & val )
 {
 	type = val.type;
-	i64 = val.i64;
+	data = val.data;
 
 	return *this;
 }

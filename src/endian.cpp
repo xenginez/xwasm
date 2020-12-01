@@ -1,6 +1,6 @@
 #include "endian.h"
 
-constexpr bool xwasm::is_big_endian()
+bool xwasm::is_big_endian()
 {
 	std::uint32_t val = 0x12345678;
 	char * p = ( char * )&val;
@@ -8,7 +8,7 @@ constexpr bool xwasm::is_big_endian()
 	return *p == 0x12;
 }
 
-constexpr std::uint16_t xwasm::to_little_uint16( std::uint16_t val )
+std::uint16_t xwasm::to_little_uint16( std::uint16_t val )
 {
 	if( xwasm::is_big_endian() )
 	{
@@ -18,7 +18,7 @@ constexpr std::uint16_t xwasm::to_little_uint16( std::uint16_t val )
 	return val;
 }
 
-constexpr std::uint32_t xwasm::to_little_uint32( std::uint32_t val )
+std::uint32_t xwasm::to_little_uint32( std::uint32_t val )
 {
 	if( xwasm::is_big_endian() )
 	{
@@ -28,7 +28,7 @@ constexpr std::uint32_t xwasm::to_little_uint32( std::uint32_t val )
 	return val;
 }
 
-constexpr std::uint64_t xwasm::to_little_uint64( std::uint64_t val )
+std::uint64_t xwasm::to_little_uint64( std::uint64_t val )
 {
 	if( xwasm::is_big_endian() )
 	{

@@ -10,7 +10,6 @@
 #define XWASM_H__471A95BF_55DD_4ECE_93A0_DFB49F8E79A4
 
 #include "value.h"
-#include "errmsg.h"
 #include "opcode.h"
 #include "module.h"
 #include "stream.h"

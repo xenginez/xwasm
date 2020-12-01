@@ -48,15 +48,13 @@ inline void exec_if( xwasm::executor * exec )
 	}
 	else
 	{
-		std::uint32_t target_pc;
-		exec->cur_stream()->read( ( char * )&target_pc, sizeof( std::uint32_t ) );
+		std::uint32_t target_pc = get_leb128_uint32( *exec->cur_stream() );
 		exec->cur_stream()->seekg( target_pc, xwasm::stream::cur );
 	}
 }
 inline void exec_else( xwasm::executor * exec )
 {
-	std::uint32_t target_pc;
-	exec->cur_stream()->read( ( char * )&target_pc, sizeof( std::uint32_t ) );
+	std::uint32_t target_pc = get_leb128_uint32( *exec->cur_stream() );
 	exec->cur_stream()->seekg( target_pc, xwasm::stream::cur );
 }
 
@@ -67,14 +65,12 @@ inline void exec_end( xwasm::executor * exec )
 
 inline void exec_br( xwasm::executor * exec )
 {
-	std::uint32_t arity;
-	exec->cur_stream()->read( ( char * )&arity, sizeof( std::uint32_t ) );
+	std::uint32_t arity = get_leb128_uint32( *exec->cur_stream() );
 	branch( exec, arity );
 }
 inline void exec_br_if( xwasm::executor * exec )
 {
-	std::uint32_t arity;
-	exec->cur_stream()->read( ( char * )&arity, sizeof( std::uint32_t ) );
+	std::uint32_t arity = get_leb128_uint32( *exec->cur_stream() );
 
 	if( exec->pop().u32 == 0 )
 	{
@@ -87,10 +83,8 @@ inline void exec_br_if( xwasm::executor * exec )
 }
 inline void exec_br_table( xwasm::executor * exec )
 {
-	std::uint32_t br_table_size;
-	exec->cur_stream()->read( ( char * )&br_table_size, sizeof( std::uint32_t ) );
-	std::uint32_t arity;
-	exec->cur_stream()->read( ( char * )&arity, sizeof( std::uint32_t ) );
+	std::uint32_t br_table_size = get_leb128_uint32( *exec->cur_stream() );
+	std::uint32_t arity = get_leb128_uint32( *exec->cur_stream() );
 	std::uint32_t br_table_idx = exec->pop().u32;
 
 	std::uint32_t label_idx_offet = br_table_idx < br_table_size ? br_table_idx * ( 2 * sizeof( std::uint32_t ) ) : br_table_size * ( 2 * sizeof( std::uint32_t ) );
@@ -100,14 +94,12 @@ inline void exec_br_table( xwasm::executor * exec )
 }
 inline void exec_return( xwasm::executor * exec )
 {
-	std::uint32_t arity;
-	exec->cur_stream()->read( ( char * )&arity, sizeof( std::uint32_t ) );
+	std::uint32_t arity = get_leb128_uint32( *exec->cur_stream() );
 	branch( exec, arity );
 }
 inline void exec_call( xwasm::executor * exec )
 {
-	std::uint32_t func_idx;
-	exec->cur_stream()->read( ( char * )&func_idx, sizeof( std::uint32_t ) );
+	std::uint32_t func_idx = get_leb128_uint32( *exec->cur_stream() );
 
 	auto func = exec->cur_runtime()->_module.func_at( func_idx );
 	auto type = exec->cur_runtime()->_module.type_at( func->typeidx );
@@ -119,7 +111,7 @@ inline void exec_call( xwasm::executor * exec )
 	{
 		xwasm::value val;
 		val.type = type->params[i];
-		val.u64 = exec->pop().u64;
+		val.data = exec->pop();
 		args.push_front( val );
 	}
 
@@ -127,14 +119,13 @@ inline void exec_call( xwasm::executor * exec )
 
 	if( !type->results.empty() )
 	{
-		exec->push( result.u64 );
+		exec->push( result.data );
 	}
 }
 inline void exec_call_indirect( xwasm::executor * exec )
 {
-	std::uint32_t type_idx, elem_idx;
-	exec->cur_stream()->read( ( char * )&type_idx, sizeof( std::uint32_t ) );
-	exec->cur_stream()->read( ( char * )&elem_idx, sizeof( std::uint32_t ) );
+	std::uint32_t type_idx = get_leb128_uint32( *exec->cur_stream() ); 
+	std::uint32_t elem_idx = get_leb128_uint32( *exec->cur_stream() );
 	std::uint32_t func_idx = exec->cur_runtime()->_tables[elem_idx];
 
 	const xwasm::type_t * type = exec->cur_runtime()->_module.type_at( type_idx );
@@ -147,7 +138,7 @@ inline void exec_call_indirect( xwasm::executor * exec )
 	{
 		xwasm::value val;
 		val.type = type->params[i];
-		val.u64 = exec->pop().u64;
+		val.data = exec->pop();
 		args.push_front( val );
 	}
 
@@ -155,7 +146,7 @@ inline void exec_call_indirect( xwasm::executor * exec )
 
 	if( !type->results.empty() )
 	{
-		exec->push( result.u64 );
+		exec->push( result.data );
 	}
 }
 
@@ -175,40 +166,34 @@ inline void exec_select( xwasm::executor * exec )
 
 inline void exec_get_local( xwasm::executor * exec )
 {
-	std::uint32_t idx = 0;
-	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
-	exec->push( exec->cur_runtime()->_locals[idx] );
+	std::uint32_t idx = get_leb128_uint32( *exec->cur_stream() );
+	exec->push( exec->cur_runtime()->_locals[exec->cur_local_index() + idx] );
 }
 inline void exec_set_local( xwasm::executor * exec )
 {
-	std::uint32_t idx = 0;
-	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
-	exec->cur_runtime()->_locals[idx] = exec->pop();
+	std::uint32_t idx = get_leb128_uint32( *exec->cur_stream() );
+	exec->cur_runtime()->_locals[exec->cur_local_index() + idx] = exec->pop();
 }
 inline void exec_tee_local( xwasm::executor * exec )
 {
-	std::uint32_t idx = 0;
-	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
-	exec->cur_runtime()->_locals[idx] = exec->top();
+	std::uint32_t idx = get_leb128_uint32( *exec->cur_stream() );
+	exec->cur_runtime()->_locals[exec->cur_local_index() + idx] = exec->top();
 }
 inline void exec_get_global( xwasm::executor * exec )
 {
-	std::uint32_t idx = 0;
-	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
+	std::uint32_t idx = get_leb128_uint32( *exec->cur_stream() );
 	exec->push( exec->cur_runtime()->_globals[idx] );
 }
 inline void exec_set_global( xwasm::executor * exec )
 {
-	std::uint32_t idx = 0;
-	exec->cur_stream()->read( ( char * )&idx, sizeof( std::uint32_t ) );
+	std::uint32_t idx = get_leb128_uint32( *exec->cur_stream() );
 	exec->cur_runtime()->_globals[idx] = exec->pop();
 }
 
 inline void exec_i32_load( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::int32_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -218,8 +203,7 @@ inline void exec_i32_load( xwasm::executor * exec )
 inline void exec_i64_load( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::int64_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -229,8 +213,7 @@ inline void exec_i64_load( xwasm::executor * exec )
 inline void exec_f32_load( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	float value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -240,8 +223,7 @@ inline void exec_f32_load( xwasm::executor * exec )
 inline void exec_f64_load( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	double value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -251,8 +233,7 @@ inline void exec_f64_load( xwasm::executor * exec )
 inline void exec_i32_load8_s( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::int8_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -262,8 +243,7 @@ inline void exec_i32_load8_s( xwasm::executor * exec )
 inline void exec_i32_load8_u( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::uint8_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -273,8 +253,7 @@ inline void exec_i32_load8_u( xwasm::executor * exec )
 inline void exec_i32_load16_s( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::int16_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -284,8 +263,7 @@ inline void exec_i32_load16_s( xwasm::executor * exec )
 inline void exec_i32_load16_u( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::uint16_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -295,8 +273,7 @@ inline void exec_i32_load16_u( xwasm::executor * exec )
 inline void exec_i64_load8_s( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::int8_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -306,8 +283,7 @@ inline void exec_i64_load8_s( xwasm::executor * exec )
 inline void exec_i64_load8_u( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::uint8_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -317,8 +293,7 @@ inline void exec_i64_load8_u( xwasm::executor * exec )
 inline void exec_i64_load16_s( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::int16_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -328,8 +303,7 @@ inline void exec_i64_load16_s( xwasm::executor * exec )
 inline void exec_i64_load16_u( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::uint16_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -339,8 +313,7 @@ inline void exec_i64_load16_u( xwasm::executor * exec )
 inline void exec_i64_load32_s( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::int32_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -350,8 +323,7 @@ inline void exec_i64_load32_s( xwasm::executor * exec )
 inline void exec_i64_load32_u( xwasm::executor * exec )
 {
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	std::uint32_t value;
 	load( exec->cur_runtime()->_memorys.data() + address + offset, value );
@@ -363,8 +335,7 @@ inline void exec_i32_store( xwasm::executor * exec )
 	std::int32_t value = exec->pop().i32;
 
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
 }
@@ -373,8 +344,7 @@ inline void exec_i64_store( xwasm::executor * exec )
 	std::int64_t value = exec->pop().i64;
 
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
 }
@@ -383,8 +353,7 @@ inline void exec_f32_store( xwasm::executor * exec )
 	float value = exec->pop().f32;
 
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
 }
@@ -393,8 +362,7 @@ inline void exec_f64_store( xwasm::executor * exec )
 	double value = exec->pop().f64;
 
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
 }
@@ -403,8 +371,7 @@ inline void exec_i32_store8( xwasm::executor * exec )
 	std::int8_t value = static_cast< std::int8_t >( exec->pop().i32 );
 
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
 }
@@ -413,8 +380,7 @@ inline void exec_i32_store16( xwasm::executor * exec )
 	std::int16_t value = static_cast< std::int16_t >( exec->pop().i32 );
 
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
 }
@@ -423,8 +389,7 @@ inline void exec_i64_store8( xwasm::executor * exec )
 	std::int8_t value = static_cast< std::int8_t >( exec->pop().i64 );
 
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
 }
@@ -433,8 +398,7 @@ inline void exec_i64_store16( xwasm::executor * exec )
 	std::int16_t value = static_cast< std::int16_t >( exec->pop().i64 );
 
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
 }
@@ -443,8 +407,7 @@ inline void exec_i64_store32( xwasm::executor * exec )
 	std::int32_t value = static_cast< std::int32_t >( exec->pop().i64 );
 
 	std::uint32_t address = exec->pop().u32;
-	std::uint32_t offset = 0;
-	exec->cur_stream()->read( ( char * )&offset, sizeof( offset ) );
+	std::uint32_t offset = get_leb128_uint32( *exec->cur_stream() );
 
 	store( exec->cur_runtime()->_memorys.data() + address + offset, value );
 }
@@ -454,8 +417,7 @@ inline void exec_memory_size( xwasm::executor * exec )
 }
 inline void exec_memory_grow( xwasm::executor * exec )
 {
-	std::uint32_t page_size;
-	exec->cur_stream()->read( ( char * )&page_size, sizeof( std::uint32_t ) );
+	std::uint32_t page_size = get_leb128_uint32( *exec->cur_stream() );
 
 	std::uint32_t cur_page = static_cast< std::uint32_t >( exec->cur_runtime()->_memorys.size() / xwasm::MEMORY_PAGE_SIZE );
 	
@@ -466,26 +428,22 @@ inline void exec_memory_grow( xwasm::executor * exec )
 
 inline void exec_i32_const( xwasm::executor * exec )
 {
-	std::int32_t v;
-	exec->cur_stream()->read( ( char * )&v, sizeof( std::int32_t ) );
+	std::int32_t v = xwasm::get_leb128_int32( *exec->cur_stream() );
 	exec->push( v );
 }
 inline void exec_i64_const( xwasm::executor * exec )
 {
-	std::int64_t v;
-	exec->cur_stream()->read( ( char * )&v, sizeof( std::int64_t ) );
+	std::int64_t v = xwasm::get_leb128_int64( *exec->cur_stream() );
 	exec->push( v );
 }
 inline void exec_f32_const( xwasm::executor * exec )
 {
-	float v;
-	exec->cur_stream()->read( ( char * )&v, sizeof( float ) );
+	float v = xwasm::bit_cast< float >( get_leb128_int32( *exec->cur_stream() ) );
 	exec->push( v );
 }
 inline void exec_f64_const( xwasm::executor * exec )
 {
-	double v;
-	exec->cur_stream()->read( ( char * )&v, sizeof( double ) );
+	double  v = xwasm::bit_cast< double >( get_leb128_int64( *exec->cur_stream() ) );
 	exec->push( v );
 }
 inline void exec_i32_eqz( xwasm::executor * exec )
@@ -1379,23 +1337,39 @@ namespace xwasm
 {
 	struct frame
 	{
-		xwasm::runtime * runtime;
-		std::uint64_t inst_index;
-		std::uint64_t local_index;
-		const xwasm::func_t * func;
-		std::uint64_t operand_index;
+		std::uint64_t inst_index = 0;
+		std::uint64_t local_index = 0;
+		std::uint64_t operand_index = 0;
+		xwasm::runtime * runtime = nullptr;
+		const xwasm::func_t * func = nullptr;
+	};
+
+	struct frame_raii
+	{
+		frame_raii( xwasm::executor * exec )
+			:_exec( exec )
+		{
+			_exec->pushed();
+		}
+
+		~frame_raii()
+		{
+			_exec->pop();
+		}
+
+		xwasm::executor * _exec;
 	};
 }
 
 struct xwasm::executor::private_p
 {
-	xwasm::sandbox * _sandbox;
+	xwasm::sandbox * _sandbox = nullptr;
 
 	std::deque< xwasm::frame > _frames;
 
 	xwasm::stream _stream;
-	xwasm::runtime * _runtime;
-	const xwasm::func_t * _func;
+	xwasm::runtime * _runtime = nullptr;
+	const xwasm::func_t * _func = nullptr;
 	std::deque< xwasm::value_data > _operands;
 };
 
@@ -1412,14 +1386,14 @@ xwasm::executor::~executor()
 
 int xwasm::executor::exec( xwasm::value & _result, xwasm::runtime * _runtime, const xwasm::func_t * _func, const std::deque< xwasm::value > & _params )
 {
-	pushed();
+	xwasm::frame_raii raii( this );
 
 	_p->_func = _func;
 	_p->_runtime = _runtime;
 
 	for( const auto & it : _params )
 	{
-		push( it.u64 );
+		_p->_runtime->_locals.push_back( it.data );
 	}
 
 	if( _p->_func->cfunc )
@@ -1964,11 +1938,9 @@ int xwasm::executor::exec( xwasm::value & _result, xwasm::runtime * _runtime, co
 		if( ! _p->_runtime->_module.type_at( _func->typeidx )->results.empty() )
 		{
 			_result.type = _p->_runtime->_module.type_at( _func->typeidx )->results[0];
-			_result.u64 = pop().u64;
+			_result.data = pop();
 		}
 	}
-
-	poped();
 
 	return 0;
 }
@@ -1991,6 +1963,11 @@ xwasm::sandbox * xwasm::executor::cur_sandbox() const
 const xwasm::func_t * xwasm::executor::cur_func() const
 {
 	return _p->_func;
+}
+
+std::uint64_t xwasm::executor::cur_local_index() const
+{
+	return _p->_frames.empty() ? 0 : _p->_frames.back().local_index;
 }
 
 void xwasm::executor::push( xwasm::value_data val )
@@ -2031,7 +2008,11 @@ void xwasm::executor::pushed()
 	frame.runtime = _p->_runtime;
 	frame.inst_index = _p->_stream.tellg();
 	frame.operand_index = _p->_operands.size();
-	frame.local_index = _p->_runtime->_locals.size();
+
+	if( frame.runtime )
+	{
+		frame.local_index = _p->_runtime->_locals.size();
+	}
 
 	_p->_frames.emplace_back( frame );
 }
@@ -2044,8 +2025,8 @@ void xwasm::executor::poped()
 	_p->_runtime = frame.runtime;
 	_p->_stream.reset( _p->_func->codes.data(), _p->_func->codes.data() + _p->_func->codes.size() );
 	_p->_stream.seekg( frame.inst_index, xwasm::stream::beg );
-	_p->_operands.erase( _p->_operands.begin() + frame.operand_index, _p->_operands.end() );
-	_p->_runtime->_locals.erase( _p->_runtime->_locals.begin() + frame.local_index, _p->_runtime->_locals.end() );
+	_p->_operands.resize( frame.operand_index );
+	_p->_runtime->_locals.resize( frame.local_index );
 
 	_p->_frames.pop_back();
 }

@@ -46,6 +46,9 @@ namespace xwasm
 		const xwasm::func_t * cur_func() const;
 
 	public:
+		std::uint64_t cur_local_index() const;
+
+	public:
 		void push( xwasm::value_data val );
 
 		xwasm::value_data top();

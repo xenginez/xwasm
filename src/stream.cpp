@@ -86,9 +86,11 @@ xwasm::stream & xwasm::stream::read( char * ptr, std::uint64_t size )
 	{
 		_stream->read( ptr, size );
 	}
-
-	std::memcpy( ptr, _cur, size );
-	_cur += size;
+	else
+	{
+		std::memcpy( ptr, _cur, size );
+		_cur += size;
+	}
 
 	return *this;
 }
@@ -110,18 +112,20 @@ xwasm::stream & xwasm::stream::seekg( std::uint64_t offset, seek_dir dir )
 			break;
 		}
 	}
-
-	switch( dir )
+	else
 	{
-	case seek_dir::DIR_BEG:
-		_cur = _beg + offset;
-		break;
-	case seek_dir::DIR_CUR:
-		_cur = _cur + offset;
-		break;
-	case seek_dir::DIR_END:
-		_cur = _end + offset;
-		break;
+		switch( dir )
+		{
+		case seek_dir::DIR_BEG:
+			_cur = _beg + offset;
+			break;
+		case seek_dir::DIR_CUR:
+			_cur = _cur + offset;
+			break;
+		case seek_dir::DIR_END:
+			_cur = _end + offset;
+			break;
+		}
 	}
 
 	return *this;

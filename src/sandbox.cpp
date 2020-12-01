@@ -96,14 +96,15 @@ int xwasm::sandbox::call( xwasm::value & result, const std::string & name, std::
 	if( index != std::string::npos )
 	{
 		std::string modulename( name.begin(), name.begin() + index );
+		std::string funcname( name.begin() + index + 1, name.end() );
 
 		for( auto & it : _p->_runtimes )
 		{
 			if( it._module._name == modulename )
 			{
-				auto ex = std::find_if( it._module._exports.begin(), it._module._exports.end(), [name]( const xwasm::export_t & exprt )
+				auto ex = std::find_if( it._module._exports.begin(), it._module._exports.end(), [funcname]( const xwasm::export_t & exprt )
 										{
-											return exprt.name == name;
+											return exprt.name == funcname;
 										} );
 				if( ex != it._module._exports.end() )
 				{

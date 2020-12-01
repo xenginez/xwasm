@@ -1,2 +1,2 @@
 # xwasm
-wasm interpreter and the universal runtime
+WebAssemblyµÄC++°æ±¾½âÊÍÆ÷
