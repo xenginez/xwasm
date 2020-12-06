@@ -262,7 +262,7 @@ int xwasm::loader::load_function( module * _module, xwasm::stream & _source )
 			func.cfunc = false;
 			func.typeidx = get_leb128_uint32( _source );
 
-			_module->_funcs.push_back( func );
+			_module->_functions.push_back( func );
 		}
 	}
 
@@ -304,7 +304,7 @@ int xwasm::loader::load_memory( module * _module, xwasm::stream & _source )
 	{
 		for( std::uint32_t mem_size = get_leb128_uint32( _source ); mem_size > 0; mem_size-- )
 		{
-			mem_t mem;
+			memory_t mem;
 
 			int flag = _source.get();
 			mem.min = get_leb128_uint32( _source );
@@ -313,7 +313,7 @@ int xwasm::loader::load_memory( module * _module, xwasm::stream & _source )
 				mem.max = get_leb128_uint32( _source );
 			}
 
-			_module->_mems.push_back( mem );
+			_module->_memorys.push_back( mem );
 		}
 	}
 
@@ -422,7 +422,7 @@ int xwasm::loader::load_element( module * _module, xwasm::stream & _source )
 	{
 		for( std::uint32_t elem_size = get_leb128_uint32( _source ); elem_size > 0; elem_size-- )
 		{
-			elem_t elem;
+			element_t elem;
 
 			elem.table = get_leb128_uint32( _source );
 
@@ -436,7 +436,7 @@ int xwasm::loader::load_element( module * _module, xwasm::stream & _source )
 				elem.inits.push_back( get_leb128_uint32( _source ) );
 			}
 
-			_module->_elems.push_back( elem );
+			_module->_elements.push_back( elem );
 		}
 	}
 
@@ -454,7 +454,7 @@ int xwasm::loader::load_code( module * _module, xwasm::stream & _source )
 		{
 			std::uint32_t body_size = get_leb128_uint32( _source );
 			auto streampos = _source.tellg();
-			func_t & func = _module->_funcs[i];
+			func_t & func = _module->_functions[i];
 
 			for( std::uint32_t local_size = get_leb128_uint32( _source ); local_size > 0; local_size-- )
 			{

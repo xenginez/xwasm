@@ -59,7 +59,7 @@ namespace xwasm
 		xwasm::type_kind type;
 	};
 
-	struct XWASM_API mem_t
+	struct XWASM_API memory_t
 	{
 		std::uint32_t min;
 		std::uint32_t max;
@@ -79,7 +79,7 @@ namespace xwasm
 		xwasm::desc_kind desctype;
 	};
 
-	struct XWASM_API elem_t
+	struct XWASM_API element_t
 	{
 		std::uint32_t table;
 		std::int32_t offset;

@@ -55,13 +55,13 @@ namespace xwasm
 		std::uint64_t export_size() const;
 
 	public:
-		const xwasm::mem_t * mem_at( std::uint32_t val ) const;
+		const xwasm::memory_t * memory_at( std::uint32_t val ) const;
 
 		const xwasm::type_t * type_at( std::uint32_t val ) const;
 
-		const xwasm::elem_t * elem_at( std::uint32_t val ) const;
+		const xwasm::element_t * element_at( std::uint32_t val ) const;
 
-		const xwasm::func_t * func_at( std::uint32_t val ) const;
+		const xwasm::func_t * function_at( std::uint32_t val ) const;
 
 		const xwasm::data_t * data_at( std::uint32_t val ) const;
 
@@ -76,15 +76,15 @@ namespace xwasm
 	private:
 		std::string _name;
 		std::uint32_t _start = -1;
-		std::vector<xwasm::mem_t> _mems;
 		std::vector<xwasm::type_t> _types;
-		std::vector<xwasm::elem_t> _elems;
-		std::vector<xwasm::func_t> _funcs;
 		std::vector<xwasm::data_t> _datas;
 		std::vector<xwasm::table_t> _tabels;
+		std::vector<xwasm::func_t> _functions;
+		std::vector<xwasm::memory_t> _memorys;
 		std::vector<xwasm::global_t> _globals;
 		std::vector<xwasm::import_t> _imports;
 		std::vector<xwasm::export_t> _exports;
+		std::vector<xwasm::element_t> _elements;
 	};
 }
 

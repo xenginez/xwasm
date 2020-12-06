@@ -101,7 +101,7 @@ inline void exec_call( xwasm::executor * exec )
 {
 	std::uint32_t func_idx = get_leb128_uint32( *exec->cur_stream() );
 
-	auto func = exec->cur_runtime()->_module.func_at( func_idx );
+	auto func = exec->cur_runtime()->_module.function_at( func_idx );
 	auto type = exec->cur_runtime()->_module.type_at( func->typeidx );
 
 	xwasm::value result;
@@ -129,7 +129,7 @@ inline void exec_call_indirect( xwasm::executor * exec )
 	std::uint32_t func_idx = exec->cur_runtime()->_tables[elem_idx];
 
 	const xwasm::type_t * type = exec->cur_runtime()->_module.type_at( type_idx );
-	const xwasm::func_t * func = exec->cur_runtime()->_module.func_at( func_idx );
+	const xwasm::func_t * func = exec->cur_runtime()->_module.function_at( func_idx );
 
 	xwasm::value result;
 	std::deque<xwasm::value> args;

@@ -112,7 +112,7 @@ int xwasm::sandbox::call( xwasm::value & result, const std::string & name, std::
 					{
 						xwasm::executor _exec( this );
 
-						return _exec.exec( result, &it, &it._module._funcs[ex->descidx], params );
+						return _exec.exec( result, &it, &it._module._functions[ex->descidx], params );
 					}
 				}
 			}

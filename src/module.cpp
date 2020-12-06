@@ -35,7 +35,7 @@ const std::string & xwasm::module::name() const
 
 std::uint64_t xwasm::module::mem_size() const
 {
-	return _mems.size();
+	return _memorys.size();
 }
 
 std::uint64_t xwasm::module::type_size() const
@@ -45,12 +45,12 @@ std::uint64_t xwasm::module::type_size() const
 
 std::uint64_t xwasm::module::elem_size() const
 {
-	return _elems.size();
+	return _elements.size();
 }
 
 std::uint64_t xwasm::module::func_size() const
 {
-	return _funcs.size();
+	return _functions.size();
 }
 
 std::uint64_t xwasm::module::data_size() const
@@ -78,9 +78,9 @@ std::uint64_t xwasm::module::export_size() const
 	return _exports.size();
 }
 
-const xwasm::mem_t * xwasm::module::mem_at( std::uint32_t val ) const
+const xwasm::memory_t * xwasm::module::memory_at( std::uint32_t val ) const
 {
-	return &_mems[val];
+	return &_memorys[val];
 }
 
 const xwasm::type_t * xwasm::module::type_at( std::uint32_t val ) const
@@ -88,14 +88,14 @@ const xwasm::type_t * xwasm::module::type_at( std::uint32_t val ) const
 	return &_types[val];
 }
 
-const xwasm::elem_t * xwasm::module::elem_at( std::uint32_t val ) const
+const xwasm::element_t * xwasm::module::element_at( std::uint32_t val ) const
 {
-	return &_elems[val];
+	return &_elements[val];
 }
 
-const xwasm::func_t * xwasm::module::func_at( std::uint32_t val ) const
+const xwasm::func_t * xwasm::module::function_at( std::uint32_t val ) const
 {
-	return &_funcs[val];
+	return &_functions[val];
 }
 
 const xwasm::data_t * xwasm::module::data_at( std::uint32_t val ) const
