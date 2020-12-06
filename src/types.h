@@ -1,13 +1,13 @@
 /*!
- * \file	opcode.h
+ * \file	types.h
  *
  * \author	ZhengYuanQing
- * \date	2020/11/28
+ * \date	2020/12/06
  * \email	zhengyuanqing.95@gmail.com
  *
  */
-#ifndef OPCODE_H__2A455BD5_6317_4F3D_98FE_2FB479802C05
-#define OPCODE_H__2A455BD5_6317_4F3D_98FE_2FB479802C05
+#ifndef TYPES_H__2025D581_2243_4DA9_9199_37A4A25C1857
+#define TYPES_H__2025D581_2243_4DA9_9199_37A4A25C1857
 
 #if COMPILER == COMPILER_MSVC
 #   define DLL_IMPORT __declspec( dllimport )
@@ -31,18 +31,18 @@
 
 namespace xwasm
 {
-	constexpr unsigned int MAGIC_NUMBER = 0x6D736100;
-	constexpr unsigned int VERSION_NUMBER = 0x01;
-	constexpr unsigned int MEMORY_PAGE_SIZE = 65536;
+	static constexpr unsigned int MAGIC_NUMBER = 0x6D736100;
+	static constexpr unsigned int VERSION_NUMBER = 0x01;
+	static constexpr unsigned int MEMORY_PAGE_SIZE = 65536;
 
-	constexpr unsigned int ERR_NO = 0;
-	constexpr unsigned int ERR_MAGIC_NUMBER = 1;
-	constexpr unsigned int ERR_STREAM_UNEXPECTED_HALT = 2;
-	constexpr unsigned int ERR_STREAM_CODE = 3;
-	constexpr unsigned int ERR_FUNC_NOT_FOUND = 4;
-	constexpr unsigned int ERR_INST_CODE = 5;
+	static constexpr unsigned int ERR_NO = 0;
+	static constexpr unsigned int ERR_MAGIC_NUMBER = 1;
+	static constexpr unsigned int ERR_STREAM_UNEXPECTED_HALT = 2;
+	static constexpr unsigned int ERR_STREAM_CODE = 3;
+	static constexpr unsigned int ERR_FUNC_NOT_FOUND = 4;
+	static constexpr unsigned int ERR_INST_CODE = 5;
 
-	constexpr unsigned int ERR_UNKNOWN = 10;
+	static constexpr unsigned int ERR_UNKNOWN = 10;
 
 	constexpr const char * err_msg[] =
 	{
@@ -313,4 +313,4 @@ namespace xwasm
 
 }
 
-#endif // OPCODE_H__2A455BD5_6317_4F3D_98FE_2FB479802C05
+#endif // TYPES_H__2025D581_2243_4DA9_9199_37A4A25C1857

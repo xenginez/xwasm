@@ -13,7 +13,7 @@
 #include <string>
 
 #include "value.h"
-#include "opcode.h"
+#include "types.h"
 
 namespace xwasm
 {

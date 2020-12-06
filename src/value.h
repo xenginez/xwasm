@@ -11,7 +11,7 @@
 
 #include <cstdint>
 
-#include "opcode.h"
+#include "types.h"
 
 namespace xwasm
 {
