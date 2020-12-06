@@ -25,5 +25,5 @@ install(TARGETS xwasm
 		ARCHIVE DESTINATION lib
 )
 install(
-		FILES ${INSTALL_HEAD_FILES} DESTINATION include
+		FILES ${INSTALL_HEAD_FILES} DESTINATION include/xwasm
 )
